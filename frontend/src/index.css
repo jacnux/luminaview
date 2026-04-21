@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tu peux garder tes styles personnalisés globaux ici */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ajout pour le mode sombre :
+   On définit des variables CSS simples pour pouvoir changer les couleurs facilement */
+:root {
+  --bg-primary: #ffffff;
+  --text-primary: #000000;
+}
+
+.dark {
+  --bg-primary: #111827; /* gray-900 */
+  --text-primary: #f9fafb; /* gray-50 */
+}

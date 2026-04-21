@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Hélioscope - Gestionnaire de galeries" />
+    <title>Hélioscope</title>
+    <!-- On garde Tailwind ici -->
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+
+    <!-- SCRIPTS DE PROTECTION (À LA FIN DU BODY) -->
+    <script>
+      // 1. Bloquer le clic droit
+      document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+      }, false);
+
+      // 2. Bloquer le glisser-déposer
+      document.addEventListener('dragstart', function(e) {
+        e.preventDefault();
+      }, false);
+
+      // 3. Optionnel : Message d'avertissement
+      // Affiche un message si on essaie de copier (optionnel, peut être agaçant)
+      /*
+      document.addEventListener('copy', function(e) {
+          e.preventDefault();
+          alert('Le téléchargement est désactivé.');
+      }, false);
+      */
+    </script>
+  </body>
+</html>

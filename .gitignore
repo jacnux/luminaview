@@ -1,0 +1,8 @@
+.env
+.DS_Store
+parametres_prod/
+data/
+bug-pages.md
+documentation_blog/
+documentation-luminaview/
+utilitaire_mongo/
