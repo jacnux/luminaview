@@ -20,6 +20,13 @@ const UserSchema = new mongoose.Schema({
   bio: {
     type: String
   },
+  portfolioIntro: { type: String, default: '' }, // NOUVEAU : Texte d'intro du portfolio
+  servicesDescription: { type: String, default: '' },
+
+  bannerImage: {
+    type: String
+  },
+
   isAdmin: {
     type: Boolean,
     default: false

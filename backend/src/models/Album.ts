@@ -1,23 +1,21 @@
-// 24 Février 2026
-// version 7.0
-
 // backend/src/models/Album.ts
 import mongoose from 'mongoose';
 
 const AlbumSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   title: { type: String, required: true },
-  description: { type: String },
-  coverImage: { type: String },
-
-  // --- NOUVEAU CHAMP ---
+  description: String,
   isPublic: { type: Boolean, default: true },
 
-  // Pour les albums virtuels
+  // --- NOUVEAU : Pour le Portfolio ---
+  isFeatured: { type: Boolean, default: false },
+  coverImage: String, // Stocke le filename de la couverture (ex: "1772987727758.jpg")
+
+  // --- Champs pour les albums virtuels ---
   isVirtual: { type: Boolean, default: false },
   virtualFilter: {
       type: String,
-      enum: ['tag', 'date', null], // CORRECTION ICI
+      enum: ['tag', 'date', null],
       default: null
   },
   filterValue: { type: String, default: null },
@@ -26,11 +24,12 @@ const AlbumSchema = new mongoose.Schema({
 
   createdAt: { type: Date, default: Date.now },
 
-  // --- NOUVEAU CHAMP V7.0 ---
- // Options : 'date_desc' (Récent), 'date_asc' (Ancien), 'manual' (Manuel)
- sortOrder: { type: String, enum: ['date_desc', 'date_asc', 'manual'], default: 'date_desc' }
+  // Options de tri
+  sortOrder: { type: String, enum: ['date_desc', 'date_asc', 'manual'], default: 'date_desc' }
 
-}, { timestamps: true });
+},
+
+{ timestamps: true });
 
 
 export default mongoose.model('Album', AlbumSchema);

@@ -4,8 +4,12 @@ import api from '../utils/api';
 
 const EditProfile = () => {
   const [bio, setBio] = useState('');
+  const [portfolioIntro, setPortfolioIntro] = useState('');
+  const [servicesDescription, setServicesDescription] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [currentAvatar, setCurrentAvatar] = useState<string>('');
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [currentBanner, setCurrentBanner] = useState<string>('');
   const [pages, setPages] = useState<any[]>([]);
   const navigate = useNavigate();
 
@@ -17,12 +21,12 @@ const EditProfile = () => {
     try {
       const profileRes = await api.get('/users/me');
       setBio(profileRes.data.bio || '');
+      setPortfolioIntro(profileRes.data.portfolioIntro || '');
+      setServicesDescription(profileRes.data.servicesDescription || '');
       setCurrentAvatar(profileRes.data.avatar || '');
-
-      // Charger les pages créées
+      setCurrentBanner(profileRes.data.bannerImage || '');
       const pagesRes = await api.get('/pages/mine');
       setPages(Array.isArray(pagesRes.data) ? pagesRes.data : []);
-
     } catch (error) {
       console.error(error);
       alert("Erreur chargement profil");
@@ -34,13 +38,18 @@ const EditProfile = () => {
     try {
       const formData = new FormData();
       formData.append('bio', bio);
+      formData.append('portfolioIntro', portfolioIntro);
+      formData.append('servicesDescription', servicesDescription);
       if (avatarFile) formData.append('avatar', avatarFile);
+      if (bannerFile) formData.append('banner', bannerFile);
 
       await api.put('/users/me', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
       alert('Profil mis à jour !');
+      setBannerFile(null);
+      setAvatarFile(null);
       fetchData();
     } catch (error) {
       alert('Erreur lors de la sauvegarde');
@@ -52,12 +61,11 @@ const EditProfile = () => {
     navigator.clipboard.writeText(url).then(() => alert('Lien copié !'));
   };
 
-  // NOUVEAU : Fonction suppression page
   const handleDeletePage = async (id: string, title: string) => {
     if (!window.confirm(`Supprimer la page "${title}" ?`)) return;
     try {
         await api.delete(`/pages/${id}`);
-        fetchData(); // Rafraîchir la liste
+        fetchData();
     } catch (err) {
         alert("Erreur suppression");
     }
@@ -74,10 +82,34 @@ const EditProfile = () => {
         <form onSubmit={handleSubmit} className="space-y-8">
 
           {/* Section Présentation */}
-          <div className="bg-white/5 p-6 rounded-xl border border-white/10 space-y-4">
-            <h2 className="text-lg font-bold border-b border-white/10 pb-2">Présentation</h2>
+          <div className="bg-white/5 p-6 rounded-xl border border-white/10 space-y-6">
 
-            <div className="flex flex-col sm:flex-row gap-6 items-center">
+            {/* BANNIERE */}
+            <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-300">Image de couverture (Portfolio)</label>
+                <div className="w-full h-40 rounded-lg overflow-hidden bg-gray-800 relative group">
+                    {(bannerFile || currentBanner) ? (
+                        <img
+                            src={bannerFile ? URL.createObjectURL(bannerFile) : `/uploads/${currentBanner}`}
+                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition"
+                            alt="Bannière"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-500 border-2 border-dashed border-gray-700">
+                            Cliquez pour ajouter une bannière
+                        </div>
+                    )}
+                </div>
+                <input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => setBannerFile(e.target.files ? e.target.files[0] : null)}
+                    className="text-sm w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-yellow-600 file:text-white hover:file:bg-yellow-700 cursor-pointer"
+                />
+            </div>
+
+            {/* AVATAR */}
+            <div className="flex flex-col sm:flex-row gap-6 items-center border-t border-white/10 pt-6">
                 <div className="flex-shrink-0">
                     {currentAvatar || avatarFile ? (
                         <img
@@ -90,7 +122,7 @@ const EditProfile = () => {
                     )}
                 </div>
                 <div className="flex-1 w-full">
-                    <label className="block text-sm font-medium mb-1 text-gray-300">Changer la photo</label>
+                    <label className="block text-sm font-medium mb-1 text-gray-300">Changer l'avatar</label>
                     <input
                         type="file"
                         accept="image/*"
@@ -100,7 +132,8 @@ const EditProfile = () => {
                 </div>
             </div>
 
-            <div>
+            {/* BIO */}
+            <div className="border-t border-white/10 pt-6">
                 <label className="block text-sm font-medium mb-1 text-gray-300">Biographie</label>
                 <textarea
                   value={bio}
@@ -110,6 +143,30 @@ const EditProfile = () => {
                   placeholder="Présentez-vous en quelques mots..."
                 />
             </div>
+
+            {/* INTRO PORTFOLIO */}
+            <div className="border-t border-white/10 pt-6">
+                 <label className="block text-sm font-medium mb-1 text-gray-300">Introduction Portfolio</label>
+                 <textarea
+                   value={portfolioIntro}
+                   onChange={e => setPortfolioIntro(e.target.value)}
+                   rows={2}
+                   className="w-full bg-black/30 border border-white/10 p-3 rounded-lg text-white focus:ring-1 focus:ring-purple-500 outline-none"
+                   placeholder="Court texte affiché en haut de votre portfolio..."
+                 />
+            </div>
+
+            {/* SERVICES */}
+            <div className="border-t border-white/10 pt-6">
+                 <label className="block text-sm font-medium mb-1 text-gray-300">Projets-Services</label>
+                 <textarea
+                   value={servicesDescription}
+                   onChange={e => setServicesDescription(e.target.value)}
+                   rows={6}
+                   className="w-full bg-black/30 border border-white/10 p-3 rounded-lg text-white focus:ring-1 focus:ring-purple-500 outline-none"
+                   placeholder="Décrivez vos projets, tarifs, conditions... (Affiché dans l'onglet Services)"
+                 />
+            </div>
           </div>
 
           <button type="submit" className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white py-4 rounded-full font-bold text-lg shadow-lg hover:scale-[1.02] transition">
@@ -117,7 +174,7 @@ const EditProfile = () => {
           </button>
         </form>
 
-        {/* --- SECTION MES PAGES --- */}
+        {/* MES PAGES */}
         <div className="mt-12 bg-white/5 p-6 rounded-xl border border-white/10 space-y-4">
             <div className="flex justify-between items-center border-b border-white/10 pb-2">
                 <h2 className="text-lg font-bold">Mes Pages de Présentation</h2>
@@ -146,7 +203,6 @@ const EditProfile = () => {
                             <a href={`/p/${page.slug}`} target="_blank" rel="noreferrer" className="text-xs bg-gray-600 hover:bg-gray-500 px-3 py-1 rounded">Voir</a>
                             <button onClick={() => copyLink(page.slug)} className="text-xs bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded">Partager</button>
                             <button onClick={() => navigate(`/pages/edit/${page._id}`)} className="text-xs bg-yellow-600 hover:bg-yellow-500 px-3 py-1 rounded">Modifier</button>
-                            {/* NOUVEAU : BOUTON SUPPRIMER */}
                             <button onClick={() => handleDeletePage(page._id, page.title)} className="text-xs bg-red-600 hover:bg-red-500 px-3 py-1 rounded">Suppr.</button>
                         </div>
                     </div>

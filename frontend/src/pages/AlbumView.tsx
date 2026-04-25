@@ -117,7 +117,8 @@ const AlbumView = () => {
   if (isSlideshow && photos.length > 0) return <div className="w-full h-screen bg-black"><Lightbox photos={sortedPhotos} initialIndex={0} onClose={() => navigate(`/album/${id}?mode=viewer`)} /></div>;
 
   return (
-    <div className="relative min-h-screen w-full">
+    // Ajout de bg-gray-900 pour avoir le même fond que le Dashboard
+        <div className="relative min-h-screen w-full bg-gray-900">
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
         <div className="relative z-10 min-h-screen pb-20">
 

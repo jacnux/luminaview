@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import Album from '../models/Album';
 import Photo from '../models/Photo';
+import User from '../models/User';
 import { authenticateToken } from '../middleware/auth';
 import jwt from 'jsonwebtoken'; // Importé pour vérification manuelle
 
@@ -154,6 +155,31 @@ router.get('/photos/:id', async (req: Request, res: Response) => {
   }
 });
 
+
+
+// --- GET : Portfolio Public ---
+router.get('/portfolio/:username', async (req: Request, res: Response) => {
+  try {
+    const user = await User.findOne({
+      name: { $regex: new RegExp(`^${req.params.username}$`, "i") }
+    // AJOUT DE 'email'
+    }).select('name email avatar bio bannerImage portfolioIntro servicesDescription');
+
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
+
+    const albums = await Album.find({
+      userId: user._id,
+      isPublic: true,
+      isFeatured: true
+    }).sort({ createdAt: -1 });
+
+    res.json({ user, albums });
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+
 // --- GET : Détail d'un album (Support Publique + Admin) ---
 router.get('/:id', async (req: Request, res: Response) => {
   try {
@@ -220,6 +246,21 @@ router.patch('/:id/toggle-visibility', authenticateToken, async (req: Request, r
     res.json(album);
   } catch (error) {
     res.status(500).json({ error: 'Erreur changement visibilité' });
+  }
+});
+
+// PATCH : Mettre en avant sur le Portfolio
+router.patch('/:id/toggle-featured', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const album = await Album.findById(req.params.id);
+    if (!album) return res.status(404).json({ error: 'Album introuvable' });
+    if (album.userId.toString() !== req.user.userId) return res.status(403).json({ error: 'Non autorisé' });
+
+    album.isFeatured = !album.isFeatured;
+    await album.save();
+    res.json(album);
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur mise à jour' });
   }
 });
 

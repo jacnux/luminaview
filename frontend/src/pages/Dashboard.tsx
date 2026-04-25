@@ -59,6 +59,18 @@ const Dashboard = () => {
     }
   };
 
+  const toggleFeatured = async (id: string, currentState: boolean) => {
+   try {
+     await api.patch(`/albums/${id}/toggle-featured`);
+     // Mise à jour locale de l'état
+     setAlbums(albums.map(a => a._id === id ? { ...a, isFeatured: !currentState } : a));
+   } catch (err) {
+     console.error(err);
+     alert("Erreur lors de la mise en avant.");
+   }
+ };
+
+
   const toggleVisibility = async (id: string, currentState: boolean) => {
     try {
       await api.patch(`/albums/${id}/toggle-visibility`);
@@ -148,6 +160,14 @@ const Dashboard = () => {
                             <button onClick={() => toggleVisibility(album._id, album.isPublic)} className={`text-xs font-bold uppercase tracking-wide transition flex items-center gap-1 ${album.isPublic !== false ? 'text-green-300' : 'text-gray-500'}`}>
                                 {album.isPublic !== false ? '👁️ Public' : '🔒 Privé'}
                             </button>
+                            {/* BOUTON PORTFOLIO */}
+                                  <button
+                                      onClick={() => toggleFeatured(album._id, album.isFeatured)}
+                                      className={`text-xs font-bold uppercase tracking-wide transition flex items-center gap-1 ${album.isFeatured ? 'text-yellow-400' : 'text-gray-500'}`}
+                                      title={album.isFeatured ? 'Retirer du portfolio' : 'Mettre en avant sur le portfolio'}
+                                  >
+                                      {album.isFeatured ? '⭐ Portfolio' : '☆ Portfolio'}
+                                  </button>
                             <button onClick={() => setEditingAlbum(album)} className="text-indigo-300 hover:text-indigo-100 font-medium text-sm transition">Modifier</button>
                             {album.isPublic !== false && (
                               <button onClick={() => setSharingAlbum(album)} className="text-purple-300 hover:text-purple-100 text-xs font-bold uppercase tracking-wide whitespace-nowrap transition">🔗 Partager</button>
@@ -176,6 +196,15 @@ const Dashboard = () => {
                         <Link to={`/album/${album._id}`} className="text-blue-300 hover:text-blue-100 text-sm font-medium">Voir</Link>
                         <button onClick={() => setEditingAlbum(album)} className="text-indigo-300 hover:text-indigo-100 text-sm">Modif.</button>
                         {album.isPublic !== false && (<button onClick={() => setSharingAlbum(album)} className="text-purple-300 hover:text-purple-100 text-sm">Part.</button>)}
+                          {/* BOUTON PORTFOLIO */}
+                            <button
+                                onClick={() => toggleFeatured(album._id, album.isFeatured)}
+                                className={`text-xs font-bold uppercase tracking-wide transition flex items-center gap-1 ${album.isFeatured ? 'text-yellow-400' : 'text-gray-500'}`}
+                                title={album.isFeatured ? 'Retirer du portfolio' : 'Mettre en avant sur le portfolio'}
+                            >
+                                {album.isFeatured ? '⭐ Portfolio' : '☆ Portfolio'}
+                            </button>
+
                         <button onClick={() => deleteAlbum(album._id)} className="text-red-300 hover:text-red-100 text-sm">Suppr.</button>
                     </div>
                 </div>
