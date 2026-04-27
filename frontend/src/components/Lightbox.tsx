@@ -56,22 +56,22 @@ const Lightbox: React.FC<LightboxProps> = ({ photos, initialIndex, onClose }) =>
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-95 flex flex-col" onWheel={handleWheel}>
-      
+
       {/* 1. ZONE HAUTE : Titre + Contrôles */}
       <div className="absolute top-0 left-0 w-full p-4 z-20 flex justify-between items-start pointer-events-none">
-        
-        <div className="text-white bg-black/50 backdrop-blur-sm p-2 rounded pointer-events-auto max-w-[70%]">
-          <h3 className="font-bold text-lg md:text-xl drop-shadow-lg truncate">
-            {currentPhoto.title}
-          </h3>
-        </div>
+
+      <div className="text-white bg-black/50 backdrop-blur-sm p-2 rounded pointer-events-auto max-w-[70%]">
+        <h3 className="font-bold text-lg md:text-xl drop-shadow-lg truncate">
+          {currentPhoto.title}
+        </h3>
+      </div>
 
         <div className="flex gap-2 items-center">
           <span className="text-white font-mono bg-black/50 px-2 py-1 rounded text-sm">
             {currentIndex + 1} / {photos.length}
           </span>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="text-white text-3xl hover:text-red-500 pointer-events-auto leading-none"
           >
             ×

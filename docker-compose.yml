@@ -17,8 +17,14 @@ services:
   backend:
     build: ./backend
     container_name: luminaview-app
+    # ...
+    # REMPLACE CECI :
     expose:
       - "3000"
+
+    # PAR CECI :
+    #ports:
+    #  - "3000:3000"
     depends_on:
       - mongo
     environment:

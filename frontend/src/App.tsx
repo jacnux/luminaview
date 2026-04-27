@@ -1,5 +1,4 @@
 import React from 'react';
-//import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import { getSubdomain } from './utils/domain';
 import { AuthProvider } from './context/AuthContext';
@@ -25,6 +24,9 @@ import LegalPage from './pages/LegalPage';
 import VerifyEmail from './pages/VerifyEmail';
 import BlogManager from './pages/BlogManager';
 import PortfolioPage from './pages/PortfolioPage';
+import UserPageEditor from './pages/UserPageEditor';
+import UserPageView from './pages/UserPageView';
+import UserPagesManager from './pages/UserPagesManager';
 
 // --- MODE PORTFOLIO (SOUS-DOMAINE) ---
 const SubdomainApp: React.FC = () => {
@@ -45,10 +47,22 @@ const MainApp = () => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
 
-  // Détection du mode "viewer" (lien depuis portfolio)
   const isViewerMode = searchParams.get('mode') === 'viewer';
 
-  // 1. Si mode Viewer (Album public) -> Pas de Layout, fond noir
+  // 1. Détection des pages d'authentification
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+
+  // 2. Si on est sur Login ou Register -> Pas de Layout
+  if (isAuthPage) {
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Routes>
+    );
+  }
+
+  // 3. Si mode Viewer (Album public) -> Pas de Layout
   if (isViewerMode && location.pathname.startsWith('/album')) {
     return (
       <Routes>
@@ -57,37 +71,58 @@ const MainApp = () => {
     );
   }
 
-  // 2. Si on est sur le Portfolio -> Pas de Layout
+  // 4. Si on est sur le Portfolio -> Pas de Layout
   if (location.pathname.startsWith('/portfolio')) {
     return (
       <Routes>
+        <Route path="/portfolio/:username/:slug" element={<UserPageView />} />
         <Route path="/portfolio/:username" element={<PortfolioPage />} />
       </Routes>
     );
   }
 
-  // 3. Sinon (Dashboard, Login, etc.) -> Avec Layout
+  // 5. Sinon (Dashboard, Admin, etc.) -> Avec Layout
+  // C'est ICI qu'il manquait les routes
   return (
     <Layout>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/galleries" element={<Dashboard />} />
+
+        {/* --- ROUTES MANQUANTES RESTAURÉES ICI --- */}
         <Route path="/create-album" element={<CreateAlbum />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/manage-blog" element={<BlogManager />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/legal" element={<LegalPage />} />
+
+        {/* Albums (vue propriétaire) */}
         <Route path="/album/:id" element={<AlbumView />} />
+
+        {/* Profil et Outils */}
         <Route path="/edit-profile" element={<EditProfile />} />
+        <Route path="/tools" element={<Tools />} />
+
+        {/* Anciennes Pages (Showcase) */}
         <Route path="/pages" element={<PagesManager />} />
         <Route path="/pages/edit/:id?" element={<PageEditor />} />
+
+        {/* Nouvelles Pages Utilisateur (User Pages) */}
+        <Route path="/dashboard/pages" element={<UserPagesManager />} />
+        <Route path="/dashboard/user-page-editor" element={<UserPageEditor />} />
+        <Route path="/dashboard/user-page-editor/:id" element={<UserPageEditor />} />
+
+        {/* Blog */}
+        <Route path="/manage-blog" element={<BlogManager />} />
+
+        {/* Public Page Wrapper */}
         <Route path="/p/:slug" element={<PublicPageWrapper />} />
-        <Route path="/tools" element={<Tools />} />
+
+        {/* Admin */}
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/admin/reports" element={<AdminReports />} />
         <Route path="/admin/comments" element={<CommentModeration />} />
+
+        {/* Fallback */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Layout>

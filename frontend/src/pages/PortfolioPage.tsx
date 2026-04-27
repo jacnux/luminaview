@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../utils/api';
-import ReactMarkdown from 'react-markdown'; // Import ajouté
+import ReactMarkdown from 'react-markdown';
+import { useAuth } from '../context/AuthContext'; // 1. AJOUTER L'IMPORT
 
 const PortfolioPage = () => {
   const { username } = useParams<{ username: string }>();
-  const [user, setUser] = useState<any>(null);
+
+  // 1. On récupère l'utilisateur connecté sous le nom 'authUser' pour ne pas écraser l'autre variable
+  const { user: authUser } = useAuth();
+
+  // 2. On garde les states pour le propriétaire du portfolio
+  const [user, setUser] = useState<any>(null); // ATTENTION : Cette ligne manquait dans ton code !
   const [albums, setAlbums] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'projects' | 'about' | 'services'>('projects');
+  const [activeTab, setActiveTab] = useState<string>('projects');
+  const [userPages, setUserPages] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchPortfolio = async () => {
@@ -16,7 +23,12 @@ const PortfolioPage = () => {
         const res = await api.get(`/albums/portfolio/${username}`);
         setUser(res.data.user);
         setAlbums(res.data.albums);
-      } catch (error) {
+        // Chargement des pages perso
+        api.get(`/user-pages/${username}`).then(res => {
+            setUserPages(res.data);
+            }).catch(() => {});
+
+        } catch (error) {
         console.error(error);
       } finally {
         setLoading(false);
@@ -24,6 +36,10 @@ const PortfolioPage = () => {
     };
     fetchPortfolio();
   }, [username]);
+
+  // Détermine le lien de retour
+  const backLink = user ? '/dashboard' : '/';
+  const backText = user ? '← Dashboard' : '← Retour au site';
 
   if (loading) return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">Chargement...</div>;
   if (!user) return <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">Utilisateur introuvable</div>;
@@ -68,8 +84,8 @@ const PortfolioPage = () => {
                       <p className="text-sm md:text-base text-gray-300 mt-1 italic drop-shadow">{tagline}</p>
                   </div>
 
-                  <Link to="/" className="text-xs text-gray-300 hover:text-white bg-white/10 px-3 py-2 rounded-full transition hidden sm:block">
-                      ← Retour
+                  <Link to={backLink} className="text-xs text-gray-300 hover:text-white bg-white/10 px-3 py-2 rounded-full transition hidden sm:block">
+                      {backText}
                   </Link>
               </div>
           </div>
@@ -77,26 +93,41 @@ const PortfolioPage = () => {
 
       <div className="h-12 bg-gray-900"></div>
 
-      {/* --- BARRE D'ONGLETS --- */}
+            {/* --- BARRE D'ONGLETS --- */}
       <div className="max-w-7xl mx-auto px-4 border-b border-gray-800 mb-10">
-          <div className="flex justify-center gap-4">
+          <div className="flex justify-center gap-2 md:gap-4 flex-wrap">
+              {/* Onglet Projets */}
               <button
                 onClick={() => setActiveTab('projects')}
-                className={`px-8 py-3 text-sm font-bold rounded-t-lg transition ${activeTab === 'projects' ? 'bg-gray-800 text-yellow-400 border-t-2 border-l-2 border-r-2 border-yellow-400' : 'text-gray-500 hover:text-white'}`}
+                className={`px-6 py-3 text-sm font-bold rounded-t-lg transition ${activeTab === 'projects' ? 'bg-gray-800 text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-500 hover:text-white'}`}
               >
                 Projets
               </button>
+              {/* Onglet À propos */}
               <button
                 onClick={() => setActiveTab('about')}
-                className={`px-8 py-3 text-sm font-bold rounded-t-lg transition ${activeTab === 'about' ? 'bg-gray-800 text-yellow-400 border-t-2 border-l-2 border-r-2 border-yellow-400' : 'text-gray-500 hover:text-white'}`}
+                className={`px-6 py-3 text-sm font-bold rounded-t-lg transition ${activeTab === 'about' ? 'bg-gray-800 text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-500 hover:text-white'}`}
               >
                 À propos
               </button>
+
+              {/* NOUVEAU : Boucle sur les pages perso pour créer des onglets */}
+              {userPages.map(p => (
+                      <Link
+                        key={p._id}
+                        to={`/portfolio/${username}/${p.slug}`}
+                        className="px-6 py-3 text-sm font-bold rounded-t-lg transition text-gray-500 hover:text-white cursor-pointer"
+                      >
+                        {p.title}
+                      </Link>
+                ))}
+
+              {/* Onglet Services */}
               <button
                   onClick={() => setActiveTab('services')}
-                  className={`px-8 py-3 text-sm font-bold rounded-t-lg transition ${activeTab === 'services' ? 'bg-gray-800 text-yellow-400 border-t-2 border-l-2 border-r-2 border-yellow-400' : 'text-gray-500 hover:text-white'}`}
+                  className={`px-6 py-3 text-sm font-bold rounded-t-lg transition ${activeTab === 'services' ? 'bg-gray-800 text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-500 hover:text-white'}`}
               >
-                  Expositions -  Tirages
+                  Expositions - Tirages
               </button>
           </div>
       </div>
@@ -152,7 +183,7 @@ const PortfolioPage = () => {
                 <div className="bg-gray-800/50 backdrop-blur border border-white/10 rounded-xl p-8 shadow-2xl">
                     <h2 className="text-2xl font-bold text-yellow-400 mb-6">À propos de {user.name}</h2>
                     {user.bio ? (
-                        
+
                           <ReactMarkdown>{user.bio}</ReactMarkdown>
                     ) : (
                         <p className="text-gray-500 italic">Aucune biographie renseignée.</p>

@@ -63,6 +63,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             ${location.pathname === '/galleries' ? 'bg-purple-600 text-white' : (theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black')}`}>
                               🖼️ Galeries
                           </Link>
+                          <Link
+                                to="/dashboard/pages"
+                                className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition flex items-center gap-1
+                                  ${location.pathname.startsWith('/dashboard/pages') ? 'bg-yellow-500 text-black' : (theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black')}`}
+                              >
+                                <span>📄</span> Mes Pages
+                              </Link>
                       </div>
 
                       <Link to="/create-album" className="bg-green-500 hover:bg-green-600 text-white px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition shadow-sm">

@@ -87,25 +87,17 @@ router.get('/photos/:id', async (req: Request, res: Response) => {
     const album = await Album.findById(req.params.id);
     if (!album) return res.status(404).json({ error: 'Album introuvable' });
 
-    // Logique d'accès
+    // Logique d'accès (inchangée)
     if (!album.isPublic) {
-      // Si privé, on vérifie le token
       const authHeader = req.headers['authorization'];
       const token = authHeader && authHeader.split(' ')[1];
-
       if (!token) return res.status(401).json({ error: 'Accès non autorisé (token requis)' });
-
       try {
         const secret = process.env.JWT_SECRET || 'default_secret';
         const decoded = jwt.verify(token, secret) as any;
-
         const isAdmin = decoded.isAdmin === true;
         const isOwner = decoded.userId === album.userId.toString();
-
-        if (!isOwner && !isAdmin) {
-             return res.status(403).json({ error: 'Accès interdit' });
-        }
-
+        if (!isOwner && !isAdmin) return res.status(403).json({ error: 'Accès interdit' });
       } catch (err) {
         return res.status(403).json({ error: 'Token invalide ou expiré' });
       }
@@ -113,48 +105,41 @@ router.get('/photos/:id', async (req: Request, res: Response) => {
 
     // Récupération des photos
     let photos;
+
+    // Définition des champs à récupérer (IMPORTANT pour le titre et la description)
+    const fieldsToSelect = 'filename title description createdAt index tags';
+
     if (album.virtualFilter === 'tag' && album.filterValue) {
-      // 1. On sépare les tags
       const rawTags = album.filterValue.split(',').map(t => t.trim()).filter(t => t);
-
-      // 2. On sépare les tags positifs (à inclure) et négatifs (à exclure, commençant par -)
       const positiveTags = rawTags.filter(t => !t.startsWith('-'));
-      const negativeTags = rawTags.filter(t => t.startsWith('-')).map(t => t.substring(1)); // On enlève le "-"
+      const negativeTags = rawTags.filter(t => t.startsWith('-')).map(t => t.substring(1));
 
-      // 3. Construction de la requête MongoDB
       const query: any = {};
       const tagsCondition: any = {};
 
-      // Condition ET (Tous les tags positifs doivent être présents)
-      if (positiveTags.length > 0) {
-        tagsCondition.$all = positiveTags;
-      }
+      if (positiveTags.length > 0) tagsCondition.$all = positiveTags;
+      if (negativeTags.length > 0) tagsCondition.$nin = negativeTags;
 
-      // Condition NOT (Aucun de ces tags ne doit être présent)
-      if (negativeTags.length > 0) {
-        tagsCondition.$nin = negativeTags;
-      }
-
-      // Si on a des conditions, on les applique
       if (Object.keys(tagsCondition).length > 0) {
         query.tags = tagsCondition;
-        photos = await Photo.find(query).sort({ createdAt: -1 });
+        // AJOUT .select() ICI
+        photos = await Photo.find(query).select(fieldsToSelect).sort({ createdAt: -1 });
       } else {
-        photos = []; // Aucun tag valide
+        photos = [];
       }
 
     } else {
-      photos = await Photo.find({ albumId: req.params.id }).sort({ createdAt: -1 });
+      // AJOUT .select() ICI AUSSI
+      photos = await Photo.find({ albumId: req.params.id }).select(fieldsToSelect).sort({ createdAt: -1 });
     }
 
-    res.json(photos); // RENVOI DE LA RÉPONSE ICI
+    res.json(photos);
 
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Erreur récupération photos' });
   }
 });
-
 
 
 // --- GET : Portfolio Public ---

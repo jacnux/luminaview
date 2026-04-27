@@ -20,6 +20,7 @@ import adminRoutes from './routes/adminRoutes';
 import userRoutes from './routes/userRoutes';
 import pageRoutes from './routes/pageRoutes';
 import reportRoutes from './routes/reportRoutes';
+import userPagesRoute from './routes/userPagesRoutes';
 
 const app = express();
 const PORT = 3000;
@@ -69,6 +70,8 @@ app.use('/api/admin', adminRoutes);
 // ajout v6.0
 app.use('/api/users', userRoutes);
 app.use('/api/pages', pageRoutes);
+// Routes pour les pages personnelles des utilisateurs
+app.use('/api/user-pages', userPagesRoute);
 
 // --- START ---
 app.listen(PORT, '0.0.0.0', () => {

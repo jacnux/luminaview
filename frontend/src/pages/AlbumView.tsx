@@ -2,7 +2,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
+
 import Lightbox from '../components/Lightbox';
+
+
 import EditPhotoModal from '../components/EditPhotoModal';
 import PhotoInfoModal from '../components/PhotoInfoModal';
 
@@ -29,7 +32,12 @@ const AlbumView = () => {
   useEffect(() => {
     if(!id) return;
     api.get(`/albums/${id}`).then(res => setAlbum(res.data)).catch(err => console.error(err));
-    api.get(`/albums/photos/${id}`).then(res => setPhotos(res.data)).catch(err => console.error(err));
+  //  api.get(`/albums/photos/${id}`).then(res => setPhotos(res.data)).catch(err => console.error(err));
+    api.get(`/albums/photos/${id}`).then(res => {
+      console.log("DONNÉES PHOTOS RECUES :", res.data); // <--- AJOUTE CECI
+      setPhotos(res.data);
+    }).catch(err => console.error(err));
+
     api.get('/photos/tags').then(res => setSuggestedTags(res.data)).catch(() => {});
   }, [id]);
 
@@ -266,11 +274,13 @@ const AlbumView = () => {
                 ))}
             </div>
 
-            {lightboxIndex !== null && <Lightbox photos={sortedPhotos} initialIndex={lightboxIndex} onClose={() => setLightboxIndex(null)} />}
+
+
             {editingPhoto && <EditPhotoModal photo={editingPhoto} onClose={() => setEditingPhoto(null)} onSave={handleSavePhoto} />}
             {infoPhoto && <PhotoInfoModal photo={infoPhoto} onClose={() => setInfoPhoto(null)} />}
 
         </div>
+          {lightboxIndex !== null && <Lightbox photos={sortedPhotos} initialIndex={lightboxIndex} onClose={() => setLightboxIndex(null)} />}
     </div>
   );
 };
