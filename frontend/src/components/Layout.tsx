@@ -51,25 +51,37 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className="flex items-center gap-1 sm:gap-2">
                   {user ? (
                     <>
-                      <div className={`flex gap-1 p-1 rounded-full border
-                        ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-200'}`}>
+                    <div className={`flex gap-1 p-1 rounded-full border
+                          ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-200'}`}>
 
-                          <Link to="/dashboard" className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition
-                            ${location.pathname === '/dashboard' ? 'bg-blue-600 text-white' : (theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black')}`}>
+                            <Link to="/dashboard" className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition
+                              ${location.pathname === '/dashboard' ? 'bg-blue-600 text-white' : (theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black')}`}>
                               📁 Albums
-                          </Link>
+                            </Link>
 
-                          <Link to="/galleries" className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition
-                            ${location.pathname === '/galleries' ? 'bg-purple-600 text-white' : (theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black')}`}>
+                            <Link to="/galleries" className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition
+                              ${location.pathname === '/galleries' ? 'bg-purple-600 text-white' : (theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black')}`}>
                               🖼️ Galeries
-                          </Link>
-                          <Link
-                                to="/dashboard/pages"
-                                className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition flex items-center gap-1
-                                  ${location.pathname.startsWith('/dashboard/pages') ? 'bg-yellow-500 text-black' : (theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black')}`}
-                              >
-                                <span>📄</span> Mes Pages
-                              </Link>
+                            </Link>
+
+                            {/* --- BOUTON MON BLOG (REMIIS EN PLACE) --- */}
+                            <Link
+                              to="/manage-blog"
+                              className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition flex items-center gap-1
+                                ${location.pathname === '/manage-blog' ? 'bg-orange-600 text-white' : (theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black')}`}
+                            >
+                              <span>📝</span> Mon Blog
+                            </Link>
+
+                            {/* --- BOUTON MES PAGES --- */}
+                            <Link
+                              to="/dashboard/pages"
+                              className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition flex items-center gap-1
+                                ${location.pathname.startsWith('/dashboard/pages') ? 'bg-yellow-500 text-black' : (theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-black')}`}
+                            >
+                              <span>📄</span> Mes Pages
+                            </Link>
+
                       </div>
 
                       <Link to="/create-album" className="bg-green-500 hover:bg-green-600 text-white px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition shadow-sm">
