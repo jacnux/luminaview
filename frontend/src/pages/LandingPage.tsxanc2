@@ -1,0 +1,201 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+
+const LandingPage = () => {
+  return (
+    <div className="min-h-screen bg-black text-white flex flex-col relative overflow-hidden">
+
+      {/* --- BACKGROUND LAYER --- */}
+      <div className="absolute inset-0 z-0">
+        {/* Image de fond plein écran */}
+        <img
+          src="https://images.unsplash.com/photo-1516031190212-da133013de50?auto=format&fit=crop&w=1920&q=80"
+          alt="Photographe en studio"
+          className="w-full h-full object-cover"
+        />
+
+        {/* Overlay dégradé coloré */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-black/70 to-purple-900/70 mix-blend-multiply"></div>
+
+        {/* Halo lumineux coloré */}
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] bg-yellow-400/15 rounded-full blur-3xl"></div>
+
+        {/* Grain / noise subtil */}
+        <div className="absolute inset-0 opacity-30 pointer-events-none mix-blend-soft-light"
+             style={{
+               backgroundImage:
+                 "url('https://grainy-gradients.vercel.app/noise.svg')",
+             }}
+        />
+      </div>
+
+      {/* --- HERO SECTION --- */}
+      <header className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-10 text-center">
+        {/* Badge top / tagline */}
+        <div className="mb-6 flex items-center gap-3 rounded-full bg-white/5 border border-white/15 px-4 py-1 backdrop-blur-md">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span className="text-xs uppercase tracking-[0.2em] text-gray-300">
+            Plateforme créative pour photographes
+          </span>
+        </div>
+
+        {/* Logo / Icône */}
+        <div className="mb-6 inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-yellow-500/15 border border-yellow-500/40 backdrop-blur-xl shadow-[0_0_60px_rgba(250,204,21,0.25)]">
+          <span className="text-4xl">☀️</span>
+        </div>
+
+        <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-5 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-500 drop-shadow-xl tracking-tight">
+          Hélioscope
+        </h1>
+
+        <p className="text-base md:text-xl text-gray-200 mb-8 max-w-2xl leading-relaxed">
+          La plateforme tout-en-un pour les photographes qui veulent une présence en ligne digne de leurs images.{" "}
+          <span className="text-white font-semibold">
+            Portfolio, albums, blog et pages clients, sans une ligne de code.
+          </span>
+        </p>
+
+        {/* CTA buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <Link
+            to="/register"
+            className="group relative inline-flex items-center justify-center bg-gradient-to-r from-yellow-400 via-orange-500 to-rose-500 text-black font-semibold py-3.5 px-9 rounded-full transition transform hover:scale-105 hover:shadow-[0_0_40px_rgba(251,191,36,0.45)]"
+          >
+            Commencer gratuitement
+            <span className="absolute inset-[-1px] rounded-full border-2 border-white/30 group-hover:border-white/70 transition"></span>
+          </Link>
+
+          <Link
+            to="/login"
+            className="inline-flex items-center justify-center bg-white/5 hover:bg-white/10 border border-white/20 hover:border-white/50 py-3.5 px-9 rounded-full transition backdrop-blur-md text-sm text-gray-100"
+          >
+            Connexion
+          </Link>
+        </div>
+
+        {/* Mini ligne de confiance */}
+        <p className="mt-6 text-xs md:text-sm text-gray-400">
+          Pensé pour les photographes de mariage, de portrait, de reportage et d’auteur.
+        </p>
+      </header>
+
+      {/* --- FEATURES SECTION (Bento / Glass) --- */}
+      <section className="relative z-10 py-16 md:py-24 px-4">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 text-white">
+            Votre studio numérique complet
+          </h2>
+          <p className="text-gray-300 text-center mb-14 max-w-2xl mx-auto">
+            Centralisez portfolio, livraisons clients et storytelling, dans une interface pensée comme une salle d’exposition.
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-6 auto-rows-fr">
+
+            {/* Feature 1: Portfolio & Pages (STAR) */}
+            <div className="md:col-span-2 bg-white/5 bg-gradient-to-br from-white/10 via-white/5 to-purple-500/10 p-8 rounded-3xl border border-white/20 hover:border-yellow-400/60 transition duration-500 backdrop-blur-2xl shadow-xl shadow-black/40 flex flex-col justify-between group overflow-hidden">
+              <div className="absolute -top-20 -right-10 w-48 h-48 bg-yellow-400/10 blur-3xl rounded-full group-hover:bg-yellow-400/20 transition"></div>
+              <div className="relative">
+                <div className="inline-flex items-center gap-2 bg-yellow-500/10 text-yellow-300 px-3 py-1 rounded-full mb-4 border border-yellow-400/40 text-xs font-semibold uppercase tracking-[0.18em]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-300"></span>
+                  Portfolio & pages
+                </div>
+                <h3 className="text-2xl font-bold mb-3 text-white group-hover:text-yellow-300 transition">
+                  Portfolio & pages personnalisées
+                </h3>
+                <p className="text-gray-200 mb-5">
+                  Composez une vitrine qui ressemble à votre travail : grandes images, texte soigné, sections modulables, liens vers vos réseaux et prise de contact en un clic.
+                </p>
+
+                {/* Faux aperçu de page (mini wireframe) */}
+                <div className="mt-4 grid grid-cols-3 gap-3 text-[10px] text-gray-900">
+                  <div className="col-span-2 bg-white/90 rounded-2xl p-3 flex flex-col gap-2">
+                    <div className="h-16 rounded-xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 mb-1"></div>
+                    <div className="h-2 bg-gray-200 rounded w-4/5"></div>
+                    <div className="h-2 bg-gray-200 rounded w-3/5"></div>
+                    <div className="flex gap-2 mt-2">
+                      <div className="h-10 flex-1 rounded-xl bg-gray-100"></div>
+                      <div className="h-10 flex-1 rounded-xl bg-gray-100"></div>
+                    </div>
+                  </div>
+                  <div className="col-span-1 flex flex-col gap-2">
+                    <div className="h-12 rounded-xl bg-white/80"></div>
+                    <div className="h-12 rounded-xl bg-white/60"></div>
+                    <div className="h-12 rounded-xl bg-white/40"></div>
+                  </div>
+                </div>
+              </div>
+              <div className="relative mt-5 flex items-center gap-2 text-xs text-emerald-300">
+                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+                Disponible dès l’inscription
+              </div>
+            </div>
+
+            {/* Feature 2: Albums */}
+            <div className="bg-white/5 p-7 rounded-3xl border border-white/15 hover:border-sky-400/60 transition duration-500 backdrop-blur-2xl flex flex-col justify-between group shadow-lg shadow-black/40">
+              <div>
+                <div className="text-4xl mb-4">📸</div>
+                <h3 className="text-xl font-bold mb-2 text-white group-hover:text-sky-300 transition">
+                  Albums sécurisés
+                </h3>
+                <p className="text-gray-200 text-sm mb-4">
+                  Galeries privées, mots de passe, expiration automatique des liens et téléchargements haute définition pour vos clients.
+                </p>
+              </div>
+              <div className="mt-2 text-[11px] text-sky-200">
+                Idéal pour les livraisons de mariages, portraits, entreprises et commandes éditoriales.
+              </div>
+            </div>
+
+            {/* Feature 3: Visionneuse Pro */}
+            <div className="bg-white/5 p-7 rounded-3xl border border-white/15 hover:border-purple-400/60 transition duration-500 backdrop-blur-2xl flex flex-col justify-between group shadow-lg shadow-black/40">
+              <div>
+                <div className="text-4xl mb-4">🖼️</div>
+                <h3 className="text-xl font-bold mb-2 text-white group-hover:text-purple-300 transition">
+                  Visionneuse pro
+                </h3>
+                <p className="text-gray-200 text-sm mb-4">
+                  Zoom haute résolution, navigation fluide, infos EXIF optionnelles et affichage optimisé sur mobile comme sur grand écran.
+                </p>
+              </div>
+              <div className="mt-2 text-[11px] text-purple-200">
+                Pensée pour sublimer vos séries et sélections contact-sheet.
+              </div>
+            </div>
+
+            {/* Feature 4: Blog */}
+            <div className="md:col-span-2 bg-gradient-to-r from-purple-900/50 via-slate-900/60 to-blue-900/60 p-8 rounded-3xl border border-purple-400/40 hover:border-purple-300/80 transition duration-500 backdrop-blur-2xl flex flex-col md:flex-row gap-6 items-center group shadow-xl shadow-black/50">
+              <div className="flex-1">
+                <div className="inline-block bg-purple-500/20 text-purple-200 px-3 py-1 rounded-full mb-3 text-xs font-bold border border-purple-300/40 uppercase tracking-[0.18em]">
+                  Nouveau
+                </div>
+                <h3 className="text-xl md:text-2xl font-bold mb-2 text-white">
+                  Blog intégré à votre univers
+                </h3>
+                <p className="text-gray-200 text-sm md:text-base">
+                  Partagez récits de projets, annonces d’expos, coulisses de shooting ou guides pour vos clients. Chaque photographe dispose de son propre espace, sans publicité ni plateforme externe.
+                </p>
+              </div>
+              <div className="text-5xl md:text-6xl opacity-60 group-hover:opacity-100 transition transform group-hover:translate-y-1">
+                📝
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="relative z-10 py-8 text-center text-gray-400 text-xs md:text-sm border-t border-white/10 bg-black/40 backdrop-blur-xl">
+        <p>© 2026 Hélioscope. Tous droits réservés.</p>
+        <Link
+          to="/legal"
+          className="hover:text-white underline underline-offset-4 mt-2 inline-block transition"
+        >
+          Mentions légales
+        </Link>
+      </footer>
+    </div>
+  );
+};
+
+export default LandingPage;

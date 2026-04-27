@@ -56,6 +56,9 @@ router.get('/my/albums', authenticateToken, async (req: Request, res: Response) 
           // 3. Construction de la requête
           const query: any = { tags: { $all: positiveTags } }; // CORRECTION ICI : $all au lieu de $in
 
+          // CORRECTION SÉCURITÉ : Limiter aux photos de l'utilisateur connecté
+          query.userId = req.user.userId;
+
           // On applique aussi l'exclusion pour la couverture
           if (negativeTags.length > 0) {
              query.tags.$nin = negativeTags;
@@ -122,6 +125,10 @@ router.get('/photos/:id', async (req: Request, res: Response) => {
 
       if (Object.keys(tagsCondition).length > 0) {
         query.tags = tagsCondition;
+        // CORRECTION SÉCURITÉ CRITIQUE :
+        // On ajoute l'ID du propriétaire de l'album à la requête
+        query.userId = album.userId;
+
         // AJOUT .select() ICI
         photos = await Photo.find(query).select(fieldsToSelect).sort({ createdAt: -1 });
       } else {

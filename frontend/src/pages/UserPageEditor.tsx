@@ -60,9 +60,10 @@ const UserPageEditor = () => {
         // On récupère tous les albums, comme dans ton autre éditeur
         const res = await api.get('/albums/my/albums');
         if (Array.isArray(res.data)) {
-             // On peut choisir ici de prendre tous les albums ou juste les virtuels
-             // Pour un portfolio, prendre tous les albums est souvent mieux
-             setAvailableAlbums(res.data);
+            //  On ne garde que les galeries virtuelles
+             const virtualAlbums = res.data.filter((a: any) => a.isVirtual === true);
+             setAvailableAlbums(virtualAlbums);
+
         }
       } catch (err) {
         console.error("Erreur chargement albums", err);
