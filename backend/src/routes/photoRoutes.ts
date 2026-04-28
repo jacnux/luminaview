@@ -159,10 +159,12 @@ router.get('/my/photos', authenticateToken, async (req: Request, res: Response) 
   }
 });
 
-// 3. GET ALL TAGS
+
+// 3. GET ALL TAGS (SÉCURISÉ)
 router.get('/tags', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const tags = await Photo.distinct('tags');
+    // CORRECTION : On filtre par l'ID utilisateur pour ne voir que SES tags
+    const tags = await Photo.distinct('tags', { userId: req.user.userId });
     res.json(tags);
   } catch (error) {
     res.status(500).json({ error: 'Erreur récupération tags' });

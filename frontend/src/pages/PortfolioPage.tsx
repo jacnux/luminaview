@@ -127,7 +127,7 @@ const PortfolioPage = () => {
                   onClick={() => setActiveTab('services')}
                   className={`px-6 py-3 text-sm font-bold rounded-t-lg transition ${activeTab === 'services' ? 'bg-gray-800 text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-500 hover:text-white'}`}
               >
-                  Expositions - Tirages
+                  Mes Actualités
               </button>
           </div>
       </div>

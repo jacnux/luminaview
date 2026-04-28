@@ -206,9 +206,11 @@ router.get('/:id', async (req: Request, res: Response) => {
 // --- PUT : Modifier un album ---
 router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const { title, description, isPublic, coverImage, virtualFilter, filterValue } = req.body;
+    // AJOUT de isVirtual ici
+    const { title, description, isPublic, coverImage, virtualFilter, filterValue, isVirtual } = req.body;
 
-    const updateData: any = { title, description, isPublic, coverImage };
+    // AJOUT de isVirtual dans updateData
+    const updateData: any = { title, description, isPublic, coverImage, isVirtual };
 
     if (virtualFilter !== undefined) updateData.virtualFilter = virtualFilter;
     if (filterValue !== undefined) updateData.filterValue = filterValue;
