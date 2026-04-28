@@ -84,9 +84,17 @@ const PortfolioPage = () => {
                       <p className="text-sm md:text-base text-gray-300 mt-1 italic drop-shadow">{tagline}</p>
                   </div>
 
-                  <Link to={backLink} className="text-xs text-gray-300 hover:text-white bg-white/10 px-3 py-2 rounded-full transition hidden sm:block">
-                      {backText}
-                  </Link>
+                  {/* On affiche le bouton Dashboard SEULEMENT si le visiteur est le propriétaire */}
+                  {authUser && authUser._id === user._id ? (
+                      <Link to="/dashboard" className="text-xs text-gray-300 hover:text-white bg-white/10 px-3 py-2 rounded-full transition hidden sm:block">
+                          ← Dashboard
+                      </Link>
+                  ) : (
+                      // Sinon, on peut mettre un lien retour simple ou rien
+                      <Link to="/" className="text-xs text-gray-300 hover:text-white bg-white/10 px-3 py-2 rounded-full transition hidden sm:block">
+                          ← Retour au site
+                      </Link>
+                  )}
               </div>
           </div>
       </div>
@@ -178,24 +186,26 @@ const PortfolioPage = () => {
           )}
 
           {/* ONGLET A PROPOS */}
-          {activeTab === 'about' && (
-             <div className="max-w-3xl mx-auto">
-                <div className="bg-gray-800/50 backdrop-blur border border-white/10 rounded-xl p-8 shadow-2xl">
-                    <h2 className="text-2xl font-bold text-yellow-400 mb-6">À propos de {user.name}</h2>
-                    {user.bio ? (
-
-                          <ReactMarkdown>{user.bio}</ReactMarkdown>
-                    ) : (
-                        <p className="text-gray-500 italic">Aucune biographie renseignée.</p>
-                    )}
-                    <div className="mt-8 pt-8 border-t border-gray-700 text-center">
-                        <a href={`mailto:${user.email}`} className="inline-block bg-yellow-500 hover:bg-yellow-400 text-black px-8 py-3 rounded-full font-bold transition text-lg">
-                            Me contacter
-                        </a>
+              {activeTab === 'about' && (
+                 <div className="max-w-3xl mx-auto">
+                    <div className="bg-gray-800/50 backdrop-blur border border-white/10 rounded-xl p-8 shadow-2xl">
+                        <h2 className="text-2xl font-bold text-yellow-400 mb-6">À propos de {user.name}</h2>
+                        {user.bio ? (
+                              // AJOUT DES CLASSES 'prose prose-invert' pour le style Markdown
+                              <div className="prose prose-invert max-w-none">
+                                 <ReactMarkdown>{user.bio}</ReactMarkdown>
+                              </div>
+                        ) : (
+                            <p className="text-gray-500 italic">Aucune biographie renseignée.</p>
+                        )}
+                        <div className="mt-8 pt-8 border-t border-gray-700 text-center">
+                            <a href={`mailto:${user.email}`} className="inline-block bg-yellow-500 hover:bg-yellow-400 text-black px-8 py-3 rounded-full font-bold transition text-lg">
+                                Me contacter
+                            </a>
+                        </div>
                     </div>
-                </div>
-             </div>
-          )}
+                 </div>
+              )}
 
           {/* ONGLET SERVICES */}
           {activeTab === 'services' && (
