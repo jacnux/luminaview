@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 
@@ -8,7 +8,42 @@ const CreateAlbum = () => {
   const [description, setDescription] = useState('');
   const [isPublic, setIsPublic] = useState(true);
   const [isVirtual, setIsVirtual] = useState(false);
-  const [tags, setTags] = useState(''); // Pour l'input utilisateur
+
+  // --- GESTION DES TAGS (NOUVEAU) ---
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [includedTags, setIncludedTags] = useState<string[]>([]);
+  const [excludedTags, setExcludedTags] = useState<string[]>([]);
+
+  // Chargement des tags disponibles
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const res = await api.get('/photos/tags');
+        setAvailableTags(res.data);
+      } catch (err) {
+        console.error("Erreur chargement tags", err);
+      }
+    };
+    fetchTags();
+  }, []);
+
+  // Gestion du cycle des tags (Neutre -> Inclus -> Exclu -> Neutre)
+  const handleTagClick = (tag: string) => {
+    const isIncluded = includedTags.includes(tag);
+    const isExcluded = excludedTags.includes(tag);
+
+    if (!isIncluded && !isExcluded) {
+      // Neutre -> Inclus
+      setIncludedTags([...includedTags, tag]);
+    } else if (isIncluded) {
+      // Inclus -> Exclu
+      setIncludedTags(includedTags.filter(t => t !== tag));
+      setExcludedTags([...excludedTags, tag]);
+    } else {
+      // Exclu -> Neutre
+      setExcludedTags(excludedTags.filter(t => t !== tag));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,14 +53,17 @@ const CreateAlbum = () => {
         description,
         isPublic,
         isVirtual,
-        virtualFilter: null, // Par défaut
-        filterValue: null    // Par défaut
+        virtualFilter: null,
+        filterValue: null
       };
 
-      // Si c'est une galerie virtuelle basée sur des tags
-      if (isVirtual && tags) {
+      // Si c'est une galerie virtuelle, on construit la chaîne filterValue
+      if (isVirtual) {
+        const excludedWithDash = excludedTags.map(t => `-${t}`);
+        const filterValue = [...includedTags, ...excludedWithDash].join(',');
+
         data.virtualFilter = 'tag';
-        data.filterValue = tags; // On envoie les tags ici
+        data.filterValue = filterValue;
       }
 
       const res = await api.post('/albums', data);
@@ -80,20 +118,44 @@ const CreateAlbum = () => {
                 </div>
              </label>
 
-             {/* Champ Tags conditionnel */}
+             {/* --- NOUVELLE SECTION TAGS VISUELS --- */}
              {isVirtual && (
-                <div className="mt-2 p-4 bg-purple-900/20 border border-purple-500/30 rounded-lg">
-                    <label className="block text-sm font-bold text-purple-300 mb-2">
+                <div className="mt-4 pt-4 border-t border-white/10">
+                    <label className="block text-sm font-bold text-purple-300 mb-3">
                         Tags de recherche
                     </label>
-                    <input
-                        type="text"
-                        value={tags}
-                        onChange={(e) => setTags(e.target.value)}
-                        placeholder="Ex: portrait, nature, mariage"
-                        className="w-full bg-black/30 p-2 rounded border border-white/10 text-white"
-                    />
-                    <p className="text-xs text-gray-400 mt-1">Sépare les tags par des virgules.</p>
+
+                    {/* Légende */}
+                    <div className="flex gap-4 mb-3 text-xs">
+                        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-600"></span> Neutre</span>
+                        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500"></span> Inclus</span>
+                        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-500"></span> Exclu</span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 p-3 bg-black/20 rounded-lg max-h-40 overflow-y-auto">
+                        {availableTags.length === 0 && (
+                            <p className="text-gray-500 text-sm italic">Aucun tag trouvé. Ajoutez des tags à vos photos.</p>
+                        )}
+                        {availableTags.map(tag => {
+                            const isIncluded = includedTags.includes(tag);
+                            const isExcluded = excludedTags.includes(tag);
+
+                            let classes = "px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition border ";
+                            if (isIncluded) {
+                                classes += "bg-green-500 border-green-400 text-white shadow-lg shadow-green-500/20";
+                            } else if (isExcluded) {
+                                classes += "bg-red-500 border-red-400 text-white shadow-lg shadow-red-500/20";
+                            } else {
+                                classes += "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600";
+                            }
+
+                            return (
+                                <button type="button" key={tag} onClick={() => handleTagClick(tag)} className={classes}>
+                                    {isExcluded && '− '}{tag}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
              )}
           </div>

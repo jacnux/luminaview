@@ -27,6 +27,11 @@ import PortfolioPage from './pages/PortfolioPage';
 import UserPageEditor from './pages/UserPageEditor';
 import UserPageView from './pages/UserPageView';
 import UserPagesManager from './pages/UserPagesManager';
+// Ajoute les imports
+import DashboardAbout from './pages/DashboardAbout';
+import DashboardHelp from './pages/DashboardHelp';
+
+
 
 // --- MODE PORTFOLIO (SOUS-DOMAINE) ---
 const SubdomainApp: React.FC = () => {
@@ -86,7 +91,13 @@ const MainApp = () => {
   return (
     <Layout>
       <Routes>
+
+
+
+
         <Route path="/" element={<LandingPage />} />
+        <Route path="/dashboard/about" element={<DashboardAbout />} />
+        <Route path="/dashboard/help" element={<DashboardHelp />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/galleries" element={<Dashboard />} />
 

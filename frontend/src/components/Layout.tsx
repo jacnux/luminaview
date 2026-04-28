@@ -107,6 +107,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                           <button onClick={toggleTheme} className={`p-2 rounded-full transition text-xl ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`} title="Changer le thème">
                               {theme === 'light' ? '🌙' : '☀️'}
                           </button>
+                          <Link to="/dashboard/about" className={`p-2 rounded-full transition ${theme === 'dark' ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-200 text-gray-600'}`} title="À propos">ℹ️</Link>
+                          <Link to="/dashboard/help" className={`p-2 rounded-full transition ${theme === 'dark' ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-200 text-gray-600'}`} title="Aide">❓</Link>
+
 
                           <button onClick={() => navigate('/edit-profile')} className={`p-2 rounded-full transition ${theme === 'dark' ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-200 text-gray-600'}`} title="Profil">👤</button>
                           <button onClick={logout} className="p-2 rounded-full hover:bg-red-500/50 text-red-400 hover:text-white transition" title="Sortir">⏻</button>
