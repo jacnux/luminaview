@@ -105,20 +105,21 @@ const PortfolioPage = () => {
             {/* --- BARRE D'ONGLETS --- */}
       <div className="max-w-7xl mx-auto px-4 border-b border-gray-800 mb-10">
           <div className="flex justify-center gap-2 md:gap-4 flex-wrap">
+                {/* Onglet À propos */}
+                <button
+                  onClick={() => setActiveTab('about')}
+                  className={`px-6 py-3 text-sm font-bold rounded-t-lg transition ${activeTab === 'about' ? 'bg-gray-800 text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-500 hover:text-white'}`}
+                >
+                  À propos
+                </button>
               {/* Onglet Projets */}
               <button
                 onClick={() => setActiveTab('projects')}
                 className={`px-6 py-3 text-sm font-bold rounded-t-lg transition ${activeTab === 'projects' ? 'bg-gray-800 text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-500 hover:text-white'}`}
               >
-                Projets
+                Galeries
               </button>
-              {/* Onglet À propos */}
-              <button
-                onClick={() => setActiveTab('about')}
-                className={`px-6 py-3 text-sm font-bold rounded-t-lg transition ${activeTab === 'about' ? 'bg-gray-800 text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-500 hover:text-white'}`}
-              >
-                À propos
-              </button>
+
               {/* Onglet Blog (externe) */}
                     <a
                       href={`https://blog.helioscope.fr`}
