@@ -411,6 +411,16 @@ const App: React.FC = () => {
                     <Link to="/" className="nav-link">Articles</Link>
                     <Link to="/about" className="nav-link">Bio</Link>
                     <Link to="/gallery" className="nav-link">Galeries</Link>
+                    {/* NOUVEAU : Lien vers le Portfolio Public */}
+                    <a
+                      href={`${getMainAppUrl()}/portfolio/${blogName}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="nav-link"
+                    >
+                      Portfolio
+                    </a>
+
                     <Link to="/contact" className="nav-link">Contact</Link>
                     <DarkModeToggle />
                 </div>

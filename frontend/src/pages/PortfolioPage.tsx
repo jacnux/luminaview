@@ -119,6 +119,15 @@ const PortfolioPage = () => {
               >
                 À propos
               </button>
+              {/* Onglet Blog (externe) */}
+                    <a
+                      href={`https://blog.helioscope.fr`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-6 py-3 text-sm font-bold rounded-t-lg transition text-gray-500 hover:text-white cursor-pointer"
+                    >
+                      Blog
+                    </a>
 
               {/* NOUVEAU : Boucle sur les pages perso pour créer des onglets */}
               {userPages.map(p => (
