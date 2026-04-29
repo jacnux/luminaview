@@ -46,6 +46,8 @@ const PortfolioPage = () => {
 
   const tagline = user.bio ? user.bio.split('.')[0] + '.' : 'Photographe & Créateur Visuel';
 
+
+
   return (
     <div className="min-h-screen bg-gray-900 text-white font-sans">
 
@@ -75,27 +77,26 @@ const PortfolioPage = () => {
                       <div className="w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-gray-900 shadow-xl bg-gray-700 flex items-center justify-center text-4xl">👤</div>
                   )}
               </div>
-
               <div className="ml-36 md:ml-44 flex-1 flex justify-between items-center">
-                  <div>
-                      <h1 className="text-2xl md:text-4xl font-extrabold text-white drop-shadow-lg tracking-tight">
-                          {user.name}
-                      </h1>
-                      <p className="text-sm md:text-base text-gray-300 mt-1 italic drop-shadow">{tagline}</p>
+                     <div>
+                         <h1 className="text-2xl md:text-4xl font-extrabold text-white drop-shadow-lg tracking-tight">
+                             {user.name}
+                         </h1>
+                         <p className="text-sm md:text-base text-gray-300 mt-1 italic drop-shadow">{tagline}</p>
+                     </div>
+
+                     {/* SOLUTION FINALE : On cast authUser en 'any' pour accéder à .id */}
+                     {authUser && String((authUser as any)?.id) === String(user._id) ? (
+                         <Link to="/dashboard" className="text-xs text-gray-300 hover:text-white bg-white/10 px-3 py-2 rounded-full transition hidden sm:block">
+                             ← Dashboard
+                         </Link>
+                     ) : (
+                         <Link to="/" className="text-xs text-gray-300 hover:text-white bg-white/10 px-3 py-2 rounded-full transition hidden sm:block">
+                             ← Retour au site
+                         </Link>
+                     )}
                   </div>
 
-                  {/* On affiche le bouton Dashboard SEULEMENT si le visiteur est le propriétaire */}
-                  {authUser && authUser._id === user._id ? (
-                      <Link to="/dashboard" className="text-xs text-gray-300 hover:text-white bg-white/10 px-3 py-2 rounded-full transition hidden sm:block">
-                          ← Dashboard
-                      </Link>
-                  ) : (
-                      // Sinon, on peut mettre un lien retour simple ou rien
-                      <Link to="/" className="text-xs text-gray-300 hover:text-white bg-white/10 px-3 py-2 rounded-full transition hidden sm:block">
-                          ← Retour au site
-                      </Link>
-                  )}
-              </div>
           </div>
       </div>
 

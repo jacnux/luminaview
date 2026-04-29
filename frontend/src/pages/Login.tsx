@@ -8,31 +8,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false); // NOUVEAU
 
-  /*const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const res = await api.post('/auth/login', { email, password });
-      localStorage.setItem('token', res.data.token);
-      window.location.href = '/dashboard';
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erreur de connexion');
-    }
-  };*/
-
-  /*const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  try {
-    const res = await api.post('/auth/login', { email, password });
-
-    localStorage.setItem('token', res.data.token);
-    // AJOUTER CETTE LIGNE MANQUANTE :
-    localStorage.setItem('user', JSON.stringify(res.data.user));
-
-    window.location.href = '/dashboard';
-  } catch (err: any) {
-    setError(err.response?.data?.error || 'Erreur de connexion');
-  }
-};*/
+  
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       try {
