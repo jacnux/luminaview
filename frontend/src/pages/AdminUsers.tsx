@@ -8,7 +8,7 @@ const AdminUsers = () => {
   const [selectedUserAlbums, setSelectedUserAlbums] = useState<any[] | null>(null);
   const [loadingAlbums, setLoadingAlbums] = useState(false);
 
-  // NOUVEAU : États pour les photos
+  // États pour les photos
   const [viewingAlbum, setViewingAlbum] = useState<any | null>(null);
   const [albumPhotos, setAlbumPhotos] = useState<any[]>([]);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
@@ -16,6 +16,10 @@ const AdminUsers = () => {
   // États pour la gestion du Quota
   const [editingQuotaUser, setEditingQuotaUser] = useState<any | null>(null);
   const [newQuota, setNewQuota] = useState<string>('');
+
+  // NOUVEAU : États pour la gestion de l'Email
+  const [editingEmailUser, setEditingEmailUser] = useState<any | null>(null);
+  const [newEmail, setNewEmail] = useState<string>('');
 
   const { user } = useAuth();
 
@@ -34,7 +38,7 @@ const AdminUsers = () => {
   const handleViewAlbums = async (userId: string) => {
     setLoadingAlbums(true);
     setSelectedUserAlbums(null);
-    setViewingAlbum(null); // Reset photos view
+    setViewingAlbum(null);
     try {
       const res = await api.get(`/users/admin/${userId}/albums`);
       setSelectedUserAlbums(res.data);
@@ -45,13 +49,11 @@ const AdminUsers = () => {
     }
   };
 
-  // NOUVEAU : Charger les photos d'un album
   const handleViewAlbumPhotos = async (album: any) => {
     setViewingAlbum(album);
     setLoadingPhotos(true);
     setAlbumPhotos([]);
     try {
-      // On utilise la route standard, le backend doit autoriser l'admin
       const res = await api.get(`/albums/photos/${album._id}`);
       setAlbumPhotos(res.data);
     } catch (err) {
@@ -77,6 +79,25 @@ const AdminUsers = () => {
       fetchUsers();
     } catch (err) {
       alert("Erreur lors de la mise à jour du quota");
+    }
+  };
+
+  // --- NOUVEAU : Logique Email ---
+  const openEmailModal = (u: any) => {
+    setEditingEmailUser(u);
+    setNewEmail(u.email || '');
+  };
+
+  const handleSaveEmail = async () => {
+    if (!editingEmailUser || !newEmail) return;
+    try {
+      // On appelle la même route que pour le quota, mais avec le champ email
+      await api.put(`/admin/users/${editingEmailUser._id}`, { email: newEmail });
+      alert("Email mis à jour !");
+      setEditingEmailUser(null);
+      fetchUsers(); // Rafraîchir la liste
+    } catch (err) {
+      alert("Erreur lors de la mise à jour de l'email");
     }
   };
 
@@ -122,6 +143,8 @@ const AdminUsers = () => {
                 </p>
               </div>
               <div className="flex gap-2 flex-wrap">
+                {/* NOUVEAU BOUTON */}
+                <button onClick={() => openEmailModal(u)} className="bg-teal-600 hover:bg-teal-700 px-3 py-1 rounded text-xs font-bold">Modifier Email</button>
                 <button onClick={() => openQuotaModal(u)} className="bg-yellow-600 hover:bg-yellow-700 px-3 py-1 rounded text-xs font-bold">Modifier Quota</button>
                 <button onClick={() => handleResetPassword(u)} className="bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded text-xs font-bold">Reset MDP</button>
                 <button onClick={() => handleViewAlbums(u._id)} className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-xs font-bold">Voir albums</button>
@@ -131,12 +154,11 @@ const AdminUsers = () => {
           ))}
         </div>
 
-        {/* MODALE ALBUMS & PHOTOS */}
+        {/* MODALE ALBUMS & PHOTOS (Inchangé) */}
         {(loadingAlbums || selectedUserAlbums) && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => { setSelectedUserAlbums(null); setViewingAlbum(null); }}>
             <div className="bg-gray-900 rounded-xl p-6 max-w-3xl w-full max-h-[80vh] overflow-y-auto border border-white/10" onClick={e => e.stopPropagation()}>
               <div className="flex justify-between items-center mb-4">
-                {/* Titre dynamique */}
                 <h3 className="text-xl font-bold">
                     {viewingAlbum ? `Album : ${viewingAlbum.title}` : "Albums de l'utilisateur"}
                 </h3>
@@ -145,16 +167,9 @@ const AdminUsers = () => {
 
               {loadingAlbums ? <p>Chargement...</p> : (
                 <>
-                    {/* SI ON REGARDE LES PHOTOS */}
                     {viewingAlbum ? (
                         <div>
-                            <button
-                                onClick={() => setViewingAlbum(null)}
-                                className="mb-4 text-sm text-blue-400 hover:text-white flex items-center gap-1"
-                            >
-                                ← Retour aux albums
-                            </button>
-
+                            <button onClick={() => setViewingAlbum(null)} className="mb-4 text-sm text-blue-400 hover:text-white flex items-center gap-1">← Retour aux albums</button>
                             {loadingPhotos ? <p>Chargement des photos...</p> : (
                                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                                     {albumPhotos.length === 0 && <p className="col-span-full text-gray-500 text-center py-8">Aucune photo.</p>}
@@ -170,26 +185,17 @@ const AdminUsers = () => {
                             )}
                         </div>
                     ) : (
-                        /* LISTE DES ALBUMS */
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                             {selectedUserAlbums && selectedUserAlbums.length === 0 && <p className="col-span-3 text-gray-500 text-center py-8">Aucun album.</p>}
                             {selectedUserAlbums?.map(album => (
-                                <div
-                                    key={album._id}
-                                    className="bg-white/5 rounded-lg overflow-hidden border border-white/5 hover:border-blue-500 transition cursor-pointer"
-                                    onClick={() => handleViewAlbumPhotos(album)}
-                                >
+                                <div key={album._id} className="bg-white/5 rounded-lg overflow-hidden border border-white/5 hover:border-blue-500 transition cursor-pointer" onClick={() => handleViewAlbumPhotos(album)}>
                                 <div className="aspect-square bg-black/30">
-                                    {album.coverImage ? (
-                                        <img src={`/uploads/${album.coverImage}`} className="w-full h-full object-cover" alt="cover" />
-                                    ) : <div className="w-full h-full flex items-center justify-center text-4xl">🖼️</div>}
+                                    {album.coverImage ? <img src={`/uploads/${album.coverImage}`} className="w-full h-full object-cover" alt="cover" /> : <div className="w-full h-full flex items-center justify-center text-4xl">🖼️</div>}
                                 </div>
                                 <div className="p-2 text-xs">
                                     <p className="font-bold truncate">{album.title}</p>
                                     <div className="flex justify-between items-center mt-1">
-                                        <span className={`text-[10px] px-1 rounded ${album.isPublic ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
-                                            {album.isPublic ? 'Public' : 'Privé'}
-                                        </span>
+                                        <span className={`text-[10px] px-1 rounded ${album.isPublic ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>{album.isPublic ? 'Public' : 'Privé'}</span>
                                         <span className="text-blue-400 hover:underline text-[10px]">Voir photos →</span>
                                     </div>
                                 </div>
@@ -203,7 +209,7 @@ const AdminUsers = () => {
           </div>
         )}
 
-        {/* MODALE QUOTA */}
+        {/* MODALE QUOTA (Inchangé) */}
         {editingQuotaUser && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
             <div className="bg-gray-900 rounded-xl p-6 max-w-sm w-full border border-yellow-500/30">
@@ -213,13 +219,7 @@ const AdminUsers = () => {
               </p>
               <div className="mb-4">
                 <label className="block text-sm text-gray-300 mb-1">Nouveau quota (en Mo)</label>
-                <input
-                    type="number"
-                    value={newQuota}
-                    onChange={(e) => setNewQuota(e.target.value)}
-                    className="w-full bg-black/30 p-3 rounded border border-white/10 text-white"
-                    placeholder="Ex: 500"
-                />
+                <input type="number" value={newQuota} onChange={(e) => setNewQuota(e.target.value)} className="w-full bg-black/30 p-3 rounded border border-white/10 text-white" placeholder="Ex: 500" />
               </div>
               <div className="flex gap-2 justify-end">
                 <button onClick={() => setEditingQuotaUser(null)} className="px-4 py-2 text-sm text-gray-400 hover:text-white">Annuler</button>
@@ -228,6 +228,33 @@ const AdminUsers = () => {
             </div>
           </div>
         )}
+
+        {/* NOUVEAU : MODALE EMAIL */}
+        {editingEmailUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+            <div className="bg-gray-900 rounded-xl p-6 max-w-sm w-full border border-teal-500/30">
+              <h3 className="text-xl font-bold text-teal-400 mb-4">Modifier l'Email</h3>
+              <p className="text-sm text-gray-400 mb-4">
+                Utilisateur : <span className="text-white font-bold">{editingEmailUser.name}</span>
+              </p>
+              <div className="mb-4">
+                <label className="block text-sm text-gray-300 mb-1">Nouvel email</label>
+                <input
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    className="w-full bg-black/30 p-3 rounded border border-white/10 text-white"
+                    placeholder="email@exemple.com"
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setEditingEmailUser(null)} className="px-4 py-2 text-sm text-gray-400 hover:text-white">Annuler</button>
+                <button onClick={handleSaveEmail} className="px-4 py-2 bg-teal-600 hover:bg-teal-700 rounded text-sm font-bold">Sauvegarder</button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

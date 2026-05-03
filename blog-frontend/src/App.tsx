@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useParams, useLocation } 
 import ReactMarkdown from 'react-markdown';
 import { getBlogSlug } from './utils/getBlogSlug';
 import { ThemeProvider } from './context/ThemeContext';
-import { useTheme } from './context/ThemeContext'; // On importe le hook aussi
+import { useTheme } from './context/ThemeContext';
 
 // --- UTILITAIRE : URL DYNAMIQUE ---
 const getMainAppUrl = () => {
@@ -17,7 +17,8 @@ const API_PREFIX = '/api/blog';
 
 // --- FOOTER AVEC NEWSLETTER ---
 const Footer = () => {
-  const blogName = getBlogSlug();
+  const location = useLocation();
+  const blogName = getBlogSlug(location.search);
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -38,30 +39,18 @@ const Footer = () => {
   return (
     <footer style={{ background: 'var(--bg-navbar)', borderTop: '1px solid var(--border-color)', padding: '2rem 1rem', marginTop: 'auto', textAlign: 'center' }}>
       <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-
-        {/* Formulaire Newsletter */}
         {!subscribed ? (
             <form onSubmit={handleSubscribe} style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <input
-                    type="email"
-                    placeholder="Votre email pour les nouveaux articles"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    required
-                    className="input-field"
-                    style={{ maxWidth: '300px', textAlign: 'center' }}
-                />
+                <input type="email" placeholder="Votre email" value={email} onChange={e => setEmail(e.target.value)} required className="input-field" style={{ maxWidth: '300px', textAlign: 'center' }} />
                 <button type="submit" className="btn btn-primary">S'abonner</button>
             </form>
         ) : (
-            <p className="text-green-400 font-bold">✅ Vous êtes abonné !</p>
+            <p className="text-green-400 font-bold">✅ Abonné !</p>
         )}
-
-        {/* Liens */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', flexWrap: 'wrap' }}>
-          <Link to="/about" className="nav-link" style={{ fontSize: '0.9rem' }}>À propos</Link>
+          <Link to={`/about${location.search}`} className="nav-link" style={{ fontSize: '0.9rem' }}>À propos</Link>
           <a href={`${getMainAppUrl()}/legal`} target="_blank" rel="noopener noreferrer" className="nav-link" style={{ fontSize: '0.9rem' }}>Mentions Légales</a>
-          <Link to="/contact" className="nav-link" style={{ fontSize: '0.9rem' }}>Contact</Link>
+          <Link to={`/contact${location.search}`} className="nav-link" style={{ fontSize: '0.9rem' }}>Contact</Link>
         </div>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '1rem' }}>© {new Date().getFullYear()} Hélioscope.</p>
       </div>
@@ -69,17 +58,18 @@ const Footer = () => {
   );
 };
 
-// --- FONCTION UTILITAIRE : Extraire la première image du Markdown ---
+// --- COMPONENTS (PostList, PostDetail, etc.) ---
+
 const extractFirstImage = (content: string): string | null => {
   const match = content.match(/!\[.*?\]\((.*?)\)/);
   return match ? match[1] : null;
 };
 
-// --- PAGE : LISTE DES ARTICLES ---
 const PostList: React.FC = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const blogSlug = getBlogSlug();
+  const location = useLocation();
+  const blogSlug = getBlogSlug(location.search);
 
   useEffect(() => {
     fetch(`${API_PREFIX}/posts?blog=${blogSlug}`)
@@ -95,46 +85,29 @@ const PostList: React.FC = () => {
 
   return (
     <div className="container">
-      {posts.length === 0 ? (
-        <p className="text-center text-muted">Aucun article.</p>
-      ) : (
+      {posts.length === 0 ? (<p className="text-center text-muted">Aucun article.</p>) : (
         <>
           {latestPost && (
-            <Link to={`/post/${latestPost.slug}`} key={latestPost._id} className="card-link" style={{ marginBottom: '2rem' }}>
+            <Link to={`/post/${latestPost.slug}${location.search}`} key={latestPost._id} className="card-link" style={{ marginBottom: '2rem' }}>
               <article className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
-                {extractFirstImage(latestPost.content) && (
-                  <div style={{
-                    flex: '1 1 300px',
-                    minHeight: '250px',
-                    backgroundImage: `url(${extractFirstImage(latestPost.content)})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
-                  }} />
-                )}
+                {extractFirstImage(latestPost.content) && ( <div style={{ flex: '1 1 300px', minHeight: '250px', backgroundImage: `url(${extractFirstImage(latestPost.content)})`, backgroundSize: 'cover', backgroundPosition: 'center' }} /> )}
                 <div style={{ flex: '2 1 300px', padding: '2rem' }}>
-                  <span className="card-date" style={{ color: '#fbbf24', fontWeight: 'bold' }}>ARTICLE LE PLUS RÉCENT</span>
+                  <span className="card-date" style={{ color: '#fbbf24', fontWeight: 'bold' }}>ARTICLE RÉCENT</span>
                   <h2 className="card-title" style={{ fontSize: '2rem', marginTop: '0.5rem' }}>{latestPost.title}</h2>
                   <p className="card-excerpt">{latestPost.content.replace(/[#*`!\[\]()]/g, '').substring(0, 250)}...</p>
-                  <span className="btn btn-ghost" style={{ marginTop: '1rem', padding: 0 }}>Lire la suite →</span>
                 </div>
               </article>
             </Link>
           )}
-
           <div className="gallery-grid">
             {otherPosts.map(post => {
               const img = extractFirstImage(post.content);
               return (
-                <Link to={`/post/${post.slug}`} key={post._id} className="card-link">
+                <Link to={`/post/${post.slug}${location.search}`} key={post._id} className="card-link">
                   <article className="card">
-                    {img && (
-                      <div style={{ height: 150, marginBottom: '1rem', borderRadius: '8px', overflow: 'hidden' }}>
-                        <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      </div>
-                    )}
+                    {img && (<div style={{ height: 150, marginBottom: '1rem', borderRadius: '8px', overflow: 'hidden' }}><img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>)}
                     <h3 className="card-title" style={{ fontSize: '1.2rem' }}>{post.title}</h3>
                     <span className="card-date">{new Date(post.createdAt).toLocaleDateString('fr-FR')}</span>
-                    <p className="card-excerpt">{post.content.replace(/[#*`!\[\]()]/g, '').substring(0, 100)}...</p>
                   </article>
                 </Link>
               );
@@ -146,126 +119,36 @@ const PostList: React.FC = () => {
   );
 };
 
-
-// --- POST DETAIL AVEC COMMENTAIRES ---
 const PostDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
   const [post, setPost] = useState<any>(null);
-  const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Formulaire
-  const [name, setName] = useState('');
-  const [content, setContent] = useState('');
-  const [sent, setSent] = useState(false);
 
   useEffect(() => {
     if (slug) {
       fetch(`${API_PREFIX}/posts/${slug}`)
         .then(res => res.json())
-        .then(data => {
-          setPost(data);
-          fetchComments(data._id);
-          setLoading(false);
-        })
+        .then(data => { setPost(data); setLoading(false); })
         .catch(err => { console.error(err); setLoading(false); });
     }
   }, [slug]);
-
-  const fetchComments = (postId: string) => {
-    fetch(`${API_PREFIX}/comments/post/${postId}`)
-      .then(res => res.json())
-      .then(data => setComments(data))
-      .catch(err => console.error(err));
-  };
-
-  const handleCommentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if(!post) return;
-
-    try {
-        await fetch(`${API_PREFIX}/comments`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                postId: post._id,
-                name,
-                email: 'anonyme@blog.com', // Ou ajouter un champ email
-                content,
-                honeypot: '' // Pour le spam
-            })
-        });
-        setName('');
-        setContent('');
-        setSent(true);
-        setTimeout(() => setSent(false), 3000);
-    } catch(err) {
-        alert("Erreur envoi");
-    }
-  };
 
   if (loading) return <div className="container text-center mt-4">Chargement...</div>;
   if (!post) return <div className="container text-center mt-4">Article non trouvé</div>;
 
   return (
     <div className="container">
-      <Link to="/" className="btn btn-ghost mb-4">&larr; Retour</Link>
-      <article className="card">
-        <h1 className="card-title">{post.title}</h1>
-        <div className="prose"><ReactMarkdown>{post.content}</ReactMarkdown></div>
-      </article>
-
-      {/* SECTION COMMENTAIRES */}
-      <div className="card mt-8">
-        <h3 className="text-xl font-bold mb-4">Commentaires ({comments.length})</h3>
-
-        {/* Liste */}
-        <div className="space-y-4 mb-6">
-            {comments.map(c => (
-                <div key={c._id} className="border-b border-gray-700 pb-4">
-                    <div className="flex justify-between items-center mb-1">
-                        <span className="font-bold text-yellow-400">{c.name}</span>
-                        <span className="text-xs text-gray-500">{new Date(c.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <p className="text-gray-300">{c.content}</p>
-                </div>
-            ))}
-            {comments.length === 0 && <p className="text-gray-500">Soyez le premier à commenter !</p>}
-        </div>
-
-        {/* Formulaire */}
-        <form onSubmit={handleCommentSubmit} className="space-y-3">
-            <input type="text" name="website" className="hidden" tabIndex={-1} autoComplete="off" /> {/* Honeypot */}
-
-            <input
-                type="text"
-                placeholder="Votre nom"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                required
-                className="input-field w-full"
-            />
-            <textarea
-                rows={3}
-                placeholder="Votre commentaire..."
-                value={content}
-                onChange={e => setContent(e.target.value)}
-                required
-                className="input-field w-full"
-            ></textarea>
-            <button type="submit" className="btn btn-primary">Envoyer</button>
-            {sent && <span className="text-green-400 ml-4">Commentaire envoyé pour modération !</span>}
-        </form>
-      </div>
+      <Link to={`/${location.search}`} className="btn btn-ghost mb-4">&larr; Retour</Link>
+      <article className="card"><h1 className="card-title">{post.title}</h1><div className="prose"><ReactMarkdown>{post.content}</ReactMarkdown></div></article>
     </div>
   );
 };
 
-// --- ABOUT (CORRIGÉ) ---
-// --- ABOUT (VERSION FINALE) ---
 const AboutPage: React.FC = () => {
   const [profile, setProfile] = useState<any>(null);
-  const blogSlug = getBlogSlug();
+  const location = useLocation();
+  const blogSlug = getBlogSlug(location.search);
 
   useEffect(() => {
     fetch(`${API_PREFIX}/user/${blogSlug}`)
@@ -278,31 +161,14 @@ const AboutPage: React.FC = () => {
 
   return (
     <div className="container text-center">
-      {/* Photo centrée */}
-      {profile.avatar && (
-        <img
-            src={`/uploads/${profile.avatar}`}
-            alt="Avatar"
-            className="about-avatar"
-            style={{ display: 'block', margin: '0 auto 1.5rem' }}
-        />
-      )}
-
-      {/* Titre centré */}
+      {profile.avatar && (<img src={`/uploads/${profile.avatar}`} alt="Avatar" className="about-avatar" style={{ display: 'block', margin: '0 auto 1.5rem' }} />)}
       <h2>{profile.name}</h2>
-
-      {/* Texte cadré à GAUCHE (text-left), mais le bloc est centré (mx-auto) */}
-      {/* La classe 'prose' gère automatiquement la couleur via le CSS qu'on a mis dans index.css */}
-      <div className="prose max-w-2xl mx-auto text-left">
-             <ReactMarkdown>{profile.bio || "Aucune bio."}</ReactMarkdown>
-      </div>
-
-      <Link to="/" className="btn btn-ghost mt-4">← Retour</Link>
+      <div className="prose max-w-2xl mx-auto text-left"><ReactMarkdown>{profile.bio || "Aucune bio."}</ReactMarkdown></div>
+      <Link to={`/${location.search}`} className="btn btn-ghost mt-4">← Retour</Link>
     </div>
   );
 };
 
-// --- GALLERY ---
 const GalleryPage: React.FC = () => {
   const [pages, setPages] = useState<any[]>([]);
   const location = useLocation();
@@ -319,18 +185,16 @@ const GalleryPage: React.FC = () => {
     <div className="container">
       <div className="text-center mb-4">
         <h2>Mes Galeries</h2>
-        <Link to="/" className="btn btn-ghost">← Retour</Link>
+        <Link to={`/${location.search}`} className="btn btn-ghost">← Retour</Link>
       </div>
       <div className="gallery-grid">
         {pages.length === 0 && <p className="text-center text-muted">Aucune galerie.</p>}
         {pages.map((page: any) => (
-          <a key={page._id} href={`${getMainAppUrl()}/p/${page.slug}`} className="gallery-card">
+          <a key={page._id} href={`${getMainAppUrl()}/portfolio/${blogSlug}/${page.slug}`} className="gallery-card" target="_blank" rel="noopener noreferrer">
             <div className="gallery-thumb">
-              {page.heroImage ? <img src={`/uploads/${page.heroImage}`} alt={page.title} /> : <div style={{height:'100%', display:'flex', alignItems:'center'}}>📷</div>}
+               {page.coverImage ? (<img src={`/uploads/${page.coverImage}`} alt={page.title} style={{width: '100%', height: '100%', objectFit: 'cover'}} />) : (<div style={{height:'100%', display:'flex', alignItems:'center', justifyContent:'center', background:'#333'}}><span style={{fontSize: '2rem'}}>🎨</span></div>)}
             </div>
-            <div className="gallery-info">
-              <h4 style={{margin:0}}>{page.title}</h4>
-            </div>
+            <div className="gallery-info"><h4 style={{margin:0}}>{page.title}</h4></div>
           </a>
         ))}
       </div>
@@ -338,110 +202,89 @@ const GalleryPage: React.FC = () => {
   );
 };
 
-// --- CONTACT ---
 const ContactPage: React.FC = () => {
   const [sent, setSent] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', message: '' });
-  const blogSlug = getBlogSlug();
+  const location = useLocation();
+  const blogSlug = getBlogSlug(location.search);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetch(`${API_PREFIX}/contact`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ ...form, blogSlug })
-    }).then(() => setSent(true))
+    fetch(`${API_PREFIX}/contact`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ...form, blogSlug }) })
+      .then(() => setSent(true))
       .catch(() => alert("Erreur envoi"));
   };
 
-  if (sent) return <div className="container text-center mt-4"><h3>Message envoyé !</h3><Link to="/" className="btn btn-ghost">Retour</Link></div>;
+  if (sent) return <div className="container text-center mt-4"><h3>Message envoyé !</h3><Link to={`/${location.search}`} className="btn btn-ghost">Retour</Link></div>;
 
   return (
     <div className="container" style={{maxWidth: '600px'}}>
       <h2 className="text-center">Me contacter</h2>
       <form onSubmit={handleSubmit} className="card">
-        <div className="input-group">
-          <label className="input-label">Votre nom</label>
-          <input type="text" required onChange={e => setForm({...form, name: e.target.value})} className="input-field" />
-        </div>
-        <div className="input-group">
-          <label className="input-label">Votre email</label>
-          <input type="email" required onChange={e => setForm({...form, email: e.target.value})} className="input-field" />
-        </div>
-        <div className="input-group">
-          <label className="input-label">Message</label>
-          <textarea rows={5} required onChange={e => setForm({...form, message: e.target.value})} className="input-field" style={{resize: 'vertical'}}></textarea>
-        </div>
+        <div className="input-group"><label className="input-label">Votre nom</label><input type="text" required onChange={e => setForm({...form, name: e.target.value})} className="input-field" /></div>
+        <div className="input-group"><label className="input-label">Votre email</label><input type="email" required onChange={e => setForm({...form, email: e.target.value})} className="input-field" /></div>
+        <div className="input-group"><label className="input-label">Message</label><textarea rows={5} required onChange={e => setForm({...form, message: e.target.value})} className="input-field" style={{resize: 'vertical'}}></textarea></div>
         <button type="submit" className="btn btn-primary" style={{width: '100%'}}>Envoyer</button>
       </form>
     </div>
   );
 };
 
-// --- BOUTON DARK MODE ---
 const DarkModeToggle: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   return (
-    <button
-      onClick={toggleTheme}
-      className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-      title="Changer le thème"
-    >
+    <button onClick={toggleTheme} className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition" title="Thème">
       {theme === 'light' ? '🌙' : '☀️'}
     </button>
   );
 };
 
-// --- APP ---
-const App: React.FC = () => {
-  const blogName = getBlogSlug();
+// --- APP COMPONENT ---
+// Note: useLocation() nécessite que ce composant soit DANS un Router.
+// Comme index.tsx ne le fait pas, on le wrappe ici.
+const AppContent = () => {
+  const location = useLocation();
+  const blogName = getBlogSlug(location.search);
 
   return (
-    <Router>
-      <ThemeProvider>
-        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-
-          {/* Navbar utilise les classes Tailwind dark: pour le fond */}
-          <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4 sticky top-0 z-50 shadow-sm">
-            <div className="container flex justify-between items-center mx-auto">
-                <Link to="/" className="text-xl font-bold text-gray-900 dark:text-white hover:text-yellow-500 transition">
-                    Blog de {blogName.toUpperCase()}
-                </Link>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    <Link to="/" className="nav-link">Articles</Link>
-                    <Link to="/about" className="nav-link">Bio</Link>
-                    <Link to="/gallery" className="nav-link">Galeries</Link>
-                    {/* NOUVEAU : Lien vers le Portfolio Public */}
-                    <a
-                      href={`${getMainAppUrl()}/portfolio/${blogName}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="nav-link"
-                    >
-                      Portfolio
-                    </a>
-
-                    <Link to="/contact" className="nav-link">Contact</Link>
-                    <DarkModeToggle />
-                </div>
+    <ThemeProvider>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4 sticky top-0 z-50 shadow-sm">
+          <div className="container flex justify-between items-center mx-auto">
+            <Link to={`/${location.search}`} className="text-xl font-bold text-gray-900 dark:text-white hover:text-yellow-500 transition">Blog de {blogName.toUpperCase()}</Link>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <Link to={`/${location.search}`} className="nav-link">Articles</Link>
+              <Link to={`/about${location.search}`} className="nav-link">Bio</Link>
+              <Link to={`/gallery${location.search}`} className="nav-link">Galeries</Link>
+              <a href={`${getMainAppUrl()}/portfolio/${blogName}`} target="_blank" rel="noopener noreferrer" className="nav-link">Portfolio</a>
+              <Link to={`/contact${location.search}`} className="nav-link">Contact</Link>
+              <DarkModeToggle />
             </div>
-          </nav>
+          </div>
+        </nav>
 
-          <main style={{ flex: 1, width: '100%' }}>
-            <Routes>
-              <Route path="/" element={<PostList />} />
-              <Route path="/post/:slug" element={<PostDetail />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/gallery" element={<GalleryPage />} />
-              <Route path="/contact" element={<ContactPage />} />
-            </Routes>
-          </main>
-
-          <Footer />
-        </div>
-      </ThemeProvider>
-    </Router>
+        <main style={{ flex: 1, width: '100%' }}>
+          <Routes>
+            <Route path="/" element={<PostList />} />
+            <Route path="/post/:slug" element={<PostDetail />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/gallery" element={<GalleryPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </ThemeProvider>
   );
 };
+
+// On exporte le composant enveloppé dans le Router
+const App = () => {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
+  )
+}
 
 export default App;

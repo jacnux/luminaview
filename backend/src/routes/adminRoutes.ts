@@ -47,28 +47,34 @@ router.put('/users/:id/quota', async (req: Request, res: Response) => {
 });
 
 // --- PUT : Modifier un utilisateur (Admin) ---
+// --- PUT : Modifier un utilisateur (Admin) ---
 router.put('/users/:id', async (req: Request, res: Response) => {
-  // Sécurité : Vérifier si c'est un admin (si tu as le middleware)
-  // if (!(req as any).user?.isAdmin) return res.status(403).json({ error: 'Accès refusé' });
-
   try {
-    const { quotaLimit, password } = req.body;
+    // MODIFICATION ICI : Ajouter 'email' à la déstructuration
+    const { quotaLimit, password, email } = req.body;
 
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
 
+    // Mise à jour du quota
     if (quotaLimit !== undefined) user.quotaLimit = quotaLimit;
 
-    // Si on veut aussi changer le mot de passe via cette route (optionnel, vu que tu as reset-password)
+    // NOUVEAU : Mise à jour de l'email
+    if (email) user.email = email;
+
+    // Mise à jour du mot de passe (si fourni)
     if (password) {
-        const bcrypt = require('bcryptjs'); // Assure-toi que bcrypt est importé
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(password, salt);
     }
 
     await user.save();
-    res.json({ message: 'Utilisateur mis à jour' });
+
+    // BONNE PRATIQUE : Renvoyer l'objet mis à jour (sans le mot de passe)
+    res.json({ message: 'Utilisateur mis à jour', user: user.toObject() });
   } catch (error) {
+    // Gestion des erreurs (ex: email déjà utilisé par quelqu'un d'autre)
+    console.error(error);
     res.status(500).json({ error: 'Erreur mise à jour' });
   }
 });

@@ -14,7 +14,7 @@ const router = Router();
 router.get('/my/list', authenticateToken, async (req: Request, res: Response) => {
   try {
     const pages = await UserPage.find({ userId: req.user.userId })
-      .select('title slug isPublished createdAt updatedAt')
+      .select('title slug isPublished showOnBlog createdAt updatedAt')
       .sort({ updatedAt: -1 });
     res.json(pages);
   } catch (error) {
@@ -35,9 +35,9 @@ router.get('/my/:id', authenticateToken, async (req: Request, res: Response) => 
 });
 
 // 3. Créer ou Mettre à jour une page
-router.post('/my/save', authenticateToken, async (req: Request, res: Response) => {
+/* router.post('/my/save', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const { id, title, slug, sections, isPublished } = req.body;
+    const { id, title, slug, sections, isPublished, showOnBlog } = req.body;
     const userId = req.user.userId;
 
     if (!title || !slug) return res.status(400).json({ error: 'Titre et slug obligatoires' });
@@ -54,22 +54,66 @@ router.post('/my/save', authenticateToken, async (req: Request, res: Response) =
       // UPDATE
       const updated = await UserPage.findOneAndUpdate(
         { _id: id, userId },
-        { title, slug: cleanSlug, sections: cleanSections, isPublished },
+        { title, slug: cleanSlug, sections: cleanSections, isPublished, showOnBlog },
         { new: true }
       );
       if (!updated) return res.status(404).json({ error: 'Page non trouvée' });
       res.json(updated);
     } else {
       // CREATE
-      const newPage = new UserPage({ userId, title, slug: cleanSlug, sections: cleanSections, isPublished });
+      const newPage = new UserPage({ userId, title, slug: cleanSlug, sections: cleanSections, isPublished, showOnBlog });
       await newPage.save();
       res.status(201).json(newPage);
     }
   } catch (error: any) {
+    console.error(error);
     if (error.code === 11000) return res.status(400).json({ error: 'Ce slug existe déjà.' });
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
+*/
+
+// 3. Créer ou Mettre à jour une page
+router.post('/my/save', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // 1. AJOUTER coverImage ICI
+    const { id, title, slug, sections, isPublished, showOnBlog, coverImage } = req.body;
+    const userId = req.user.userId;
+
+    if (!title || !slug) return res.status(400).json({ error: 'Titre et slug obligatoires' });
+
+    // Nettoyage des sections
+    const cleanSections = sections.map((s: any) => {
+      const { _id, ...rest } = s;
+      return rest;
+    });
+
+    const cleanSlug = slug.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+
+    if (id) {
+      // UPDATE
+      const updated = await UserPage.findOneAndUpdate(
+        { _id: id, userId },
+        // 2. AJOUTER coverImage ICI
+        { title, slug: cleanSlug, sections: cleanSections, isPublished, showOnBlog, coverImage },
+        { new: true }
+      );
+      if (!updated) return res.status(404).json({ error: 'Page non trouvée' });
+      res.json(updated);
+    } else {
+      // CREATE
+      // 3. AJOUTER coverImage ICI
+      const newPage = new UserPage({ userId, title, slug: cleanSlug, sections: cleanSections, isPublished, showOnBlog, coverImage });
+      await newPage.save();
+      res.status(201).json(newPage);
+    }
+  } catch (error: any) {
+    console.error(error);
+    if (error.code === 11000) return res.status(400).json({ error: 'Ce slug existe déjà.' });
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 
 // 4. Supprimer une page
 router.delete('/my/:id', authenticateToken, async (req: Request, res: Response) => {
@@ -98,32 +142,42 @@ router.get('/:username', async (req: Request, res: Response) => {
   }
 });
 
-// 6. Voir une page spécifique
-// ... début du fichier ...
 
-// 5. Voir une page spécifique
-router.get('/:username/:slug', async (req: Request, res: Response) => {
+
+    // 6. Voir une page spécifique
+ router.get('/:username/:slug', async (req: Request, res: Response) => {
   try {
     const user = await User.findOne({ name: { $regex: new RegExp(`^${req.params.username}$`, "i") } });
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
 
-    const page = await UserPage.findOne({ userId: user._id, slug: req.params.slug, isPublished: true })
-      .populate({
-          path: 'sections.albumIds',
-          model: 'Album',
-          select: 'title coverImage isVirtual virtualFilter filterValue startDate endDate'
-      });
+    // MODIFICATION ICI : On accepte la page si elle est publiée SUR LE PORTFOLIO ou SUR LE BLOG
+    const page = await UserPage.findOne({
+      userId: user._id,
+      slug: req.params.slug,
+      $or: [
+        { isPublished: true },
+        { showOnBlog: true }
+      ]
+    })
+    .populate({
+        path: 'sections.albumIds',
+        model: 'Album',
+        select: 'title coverImage isVirtual virtualFilter filterValue startDate endDate'
+    });
 
     if (!page) return res.status(404).json({ error: 'Page non trouvée' });
 
+    // ... le reste du code (toObject, boucle for, etc.) reste identique ...
     const pageObject = page.toObject();
+    // ... (copie le reste de ta fonction existante ici) ...
 
     for (const section of pageObject.sections) {
-        if (section.type === 'gallery' && section.albumIds) {
+        // On traite les galeries normales ET les blocs mixtes
+        if ((section.type === 'gallery' || section.type === 'split_text_gallery') && section.albumIds) {
             for (const album of section.albumIds) {
-                let photos: any[] = [];
+                if (!album) continue;
 
-                // Sélection des champs : filename, title ET description
+                let photos: any[] = [];
                 const selectFields = 'filename title description';
 
                 if (album.isVirtual) {
@@ -140,18 +194,15 @@ router.get('/:username/:slug', async (req: Request, res: Response) => {
                 } else {
                     photos = await Photo.find({ albumId: album._id }).select(selectFields).sort({ index: 1 });
                 }
-
-                // IMPORTANT : On assigne le tableau d'objets complet, pas juste les filenames
                 album.photos = photos;
             }
         }
     }
     res.json(pageObject);
   } catch (error) {
+    console.error("Erreur backend:", error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
-
-
 
 export default router;

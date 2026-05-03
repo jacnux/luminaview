@@ -22,17 +22,28 @@ const mainConn = mongoose.createConnection(process.env.MAIN_MONGO_URI || 'mongod
 const MainUser = mainConn.model('User', new mongoose.Schema({
   name: String, email: String, avatar: String, bio: String, isAdmin: Boolean }, { collection: 'users' }));
 
-const PageSchema = new mongoose.Schema({
-  slug: String,
+// --- MODIFICATION ICI : Nouveau Modèle pour les UserPages ---
+// On pointe vers la collection 'userpages' créée par ton appli principale
+const UserPageSchema = new mongoose.Schema({
   userId: mongoose.Schema.Types.ObjectId,
-  heroImage: String,
   title: String,
-  isPublic: Boolean,
-  showOnBlog: Boolean
-}, { collection: 'pages' });
-const MainPage = mainConn.model('Page', PageSchema);
+  slug: String,
+  coverImage: String,
+  isPublished: Boolean,
+  showOnBlog:Boolean
+  // On ne charge pas tout le contenu 'sections' pour alléger la liste des galéries
+}, { collection: 'userpages' });
+const MainUserPage = mainConn.model('UserPage', UserPageSchema);
 
-// --- MODELS ---
+// Ancien modèle (on peut le commenter ou le supprimer si tu n'utilises plus l'ancien système)
+/*
+const PageSchema = new mongoose.Schema({ ... }, { collection: 'pages' });
+const MainPage = mainConn.model('Page', PageSchema);
+*/
+// -------------------------------------------------------------
+
+// --- MODELS (Post, Comment, etc...) ---
+// ... (Laisse le reste des modèles Post, Comment, NewsletterSubscriber exactement comme ils sont) ...
 const PostSchema = new mongoose.Schema({
   title: String,
   content: String,
@@ -59,7 +70,8 @@ const NewsletterSubscriberSchema = new mongoose.Schema({
 });
 const NewsletterSubscriber = mongoose.model('NewsletterSubscriber', NewsletterSubscriberSchema);
 
-// --- MIDDLEWARE ---
+
+// --- MIDDLEWARE & EMAIL (Laisse tel quel) ---
 const authMiddleware = (req: any, res: any, next: any) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -71,7 +83,6 @@ const authMiddleware = (req: any, res: any, next: any) => {
   });
 };
 
-// --- EMAIL ---
 const transporterOptions: any = {
   host: process.env.SMTP_HOST || 'localhost',
   port: parseInt(process.env.SMTP_PORT || '587'),
@@ -82,10 +93,37 @@ if (process.env.SMTP_USER && process.env.SMTP_USER.length > 0) {
 }
 const transporter = nodemailer.createTransport(transporterOptions);
 
-// --- ROUTES ---
-app.get('/', (req, res) => res.send('Blog Engine API Running'));
 
-// GET POSTS
+// --- ROUTES ---
+
+
+// GET USER (MODIFIE POUR FILTRER PAR SHOWONBLOG)
+app.get('/api/user/:slug', async (req: Request, res: Response) => {
+  try {
+    // 1. Trouver l'utilisateur
+    const user = await MainUser.findOne({ name: { $regex: new RegExp(`^${req.params.slug}$`, "i") } });
+    if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+
+    // 2. Chercher les UserPages avec les BONS filtres
+    const pages = await MainUserPage.find({
+      userId: user._id,
+      showOnBlog: true        // Doit avoir le drapeau Blog activé
+    }).select('title slug coverImage'); // On récupère titre et slug
+
+    // 3. Renvoyer
+    res.json({
+      name: user.name,
+      avatar: user.avatar,
+      bio: user.bio,
+      showcaseAlbums: pages
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erreur' });
+  }
+});
+
+// --- POSTS ROUTES (Laisse tel quel) ---
 app.get('/api/posts', async (req: Request, res: Response) => {
   try {
     const { blog } = req.query;
@@ -94,7 +132,6 @@ app.get('/api/posts', async (req: Request, res: Response) => {
   } catch (error) { res.status(500).json({ error: 'Erreur' }); }
 });
 
-// GET POST DETAIL
 app.get('/api/posts/:slug', async (req: Request, res: Response) => {
   try {
     const post = await Post.findOne({ slug: req.params.slug });
@@ -103,31 +140,19 @@ app.get('/api/posts/:slug', async (req: Request, res: Response) => {
   } catch (error) { res.status(500).json({ error: 'Erreur' }); }
 });
 
-// CREATE POST
 app.post('/api/posts', authMiddleware, async (req: Request, res: Response) => {
-  console.log("[API] Demande de création d'article reçue"); // LOG 1
-
+  console.log("[API] Demande de création d'article reçue");
   try {
     const { title, content, slug, blogSlug } = req.body;
     if (!blogSlug) return res.status(400).json({ error: 'Blog Slug manquant' });
-
     const newPost = new Post({ title, content, slug, blogSlug });
     await newPost.save();
-
-    console.log(`[API] Article créé. Vérification abonnés pour ${blogSlug}...`); // LOG 2
-
-    // Notification
+    console.log(`[API] Article créé. Vérification abonnés pour ${blogSlug}...`);
     const subscribers = await NewsletterSubscriber.find({ blogSlug });
-
-    console.log(`[NEWSLETTER] ${subscribers.length} abonnés trouvés.`); // LOG 3
-
+    console.log(`[NEWSLETTER] ${subscribers.length} abonnés trouvés.`);
     if (subscribers.length > 0) {
-
-      // On appelle la fonction créée dans l'autre fichier
         await sendNewPostNotification(subscribers, newPost);
-
     }
-
     res.status(201).json(newPost);
   } catch (error) {
     console.error("[API] ERREUR Création:", error);
@@ -135,7 +160,6 @@ app.post('/api/posts', authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
-// UPDATE POST (LA ROUTE MANQUANTE)
 app.put('/api/posts/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { title, content, slug, blogSlug } = req.body;
@@ -145,7 +169,6 @@ app.put('/api/posts/:id', authMiddleware, async (req: Request, res: Response) =>
   } catch (error) { res.status(500).json({ error: 'Erreur maj' }); }
 });
 
-// DELETE POST
 app.delete('/api/posts/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     await Post.findByIdAndDelete(req.params.id);
@@ -153,29 +176,13 @@ app.delete('/api/posts/:id', authMiddleware, async (req: Request, res: Response)
   } catch (error) { res.status(500).json({ error: 'Erreur' }); }
 });
 
-// USER
-app.get('/api/user/:slug', async (req: Request, res: Response) => {
-  try {
-    const user = await MainUser.findOne({ name: { $regex: new RegExp(`^${req.params.slug}$`, "i") } });
-    if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
-    const pages = await MainPage.find({ userId: user._id, showOnBlog: true }).select('title slug heroImage');
-    res.json({ name: user.name, avatar: user.avatar, bio: user.bio, showcaseAlbums: pages });
-  } catch (error) { res.status(500).json({ error: 'Erreur' }); }
-});
-
-// CONTACT (CORRIGÉ)
+// --- CONTACT (MODIFIE LEGÈREMENT) ---
 app.post('/api/contact', async (req: Request, res: Response) => {
   try {
     const { blogSlug, name, email, message } = req.body;
 
-    let owner = null;
-    const page = await MainPage.findOne({ slug: blogSlug });
-    if (page && page.userId) {
-        owner = await MainUser.findById(page.userId);
-    }
-    if (!owner) {
-        owner = await MainUser.findOne({ name: { $regex: new RegExp(`^${blogSlug}$`, "i") } });
-    }
+    // Pour le contact, on cherche directement l'utilisateur par son nom (blogSlug)
+    let owner = await MainUser.findOne({ name: { $regex: new RegExp(`^${blogSlug}$`, "i") } });
 
     if (!owner || !owner.email) return res.status(404).json({ error: 'Destinataire introuvable' });
 
@@ -189,7 +196,7 @@ app.post('/api/contact', async (req: Request, res: Response) => {
   } catch (error) { res.status(500).json({ error: 'Erreur' }); }
 });
 
-// COMMENTS
+// --- COMMENTS (Laisse tel quel) ---
 app.post('/api/comments', async (req: Request, res: Response) => {
   try {
     const { postId, name, content } = req.body;
@@ -205,36 +212,17 @@ app.get('/api/comments/post/:postId', async (req: Request, res: Response) => {
 
 app.get('/api/comments/pending', authMiddleware, async (req: Request, res: Response) => {
   try {
-    // 1. On récupère l'ID du token
     const userId = (req as any).user?.userId;
-    // console.log("[DEBUG] Recherche de l'utilisateur ID:", userId);
-
-    // 2. On cherche l'utilisateur dans la base principale
     const user = await MainUser.findById(userId);
-
-    if (!user) {
-    //  console.log("[DEBUG] Utilisateur NON TROUVÉ dans la base principale");
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // 3. On vérifie son statut admin
-    // console.log(`[DEBUG] Utilisateur trouvé: ${user.name}, Admin: ${user.isAdmin}`);
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
     let query: any = { isApproved: false };
-
-    // Si PAS admin, on filtre
     if (!user.isAdmin) {
-      //  console.log("[DEBUG] Mode 'Auteur': Filtrage par blogSlug");
         const userPosts = await Post.find({ blogSlug: user.name.toLowerCase() }).select('_id');
         const postIds = userPosts.map(p => p._id);
         query.postId = { $in: postIds };
-    } else {
-        console.log("[DEBUG] Mode 'Admin': Affichage de tous les commentaires");
     }
-
     const comments = await Comment.find(query).populate('postId', 'title');
-    // console.log(`[DEBUG] Commentaires trouvés: ${comments.length}`);
-
     res.json(comments);
   } catch (e) {
     console.error("[COMMENTS] Erreur:", e);
@@ -252,7 +240,7 @@ app.delete('/api/comments/:id', authMiddleware, async (req: Request, res: Respon
   catch (e) { res.status(500).json({ error: 'Error' }); }
 });
 
-// NEWSLETTER
+// --- NEWSLETTER ---
 app.post('/api/subscribe', async (req: Request, res: Response) => {
   try {
     const { email, blogSlug } = req.body;
@@ -262,5 +250,4 @@ app.post('/api/subscribe', async (req: Request, res: Response) => {
   } catch (e) { res.status(500).json({ error: 'Error' }); }
 });
 
-// Remplace la dernière ligne par celle-ci :
 app.listen(PORT, '0.0.0.0', () => console.log(`Blog Engine running on port ${PORT}`));

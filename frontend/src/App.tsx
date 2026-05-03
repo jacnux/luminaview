@@ -13,8 +13,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AlbumView from './pages/AlbumView';
 import EditProfile from './pages/EditProfile';
-import PageEditor from './pages/PageEditor';
-import PagesManager from './pages/PagesManager';
+//import PageEditor from './pages/PageEditor'; // Ancien éditeur (Showcase) - à garder si tu l'utilises encore
 import PublicPage from './pages/PublicPage';
 import Tools from './pages/Tools';
 import AdminUsers from './pages/AdminUsers';
@@ -26,11 +25,9 @@ import BlogManager from './pages/BlogManager';
 import PortfolioPage from './pages/PortfolioPage';
 import UserPageEditor from './pages/UserPageEditor';
 import UserPageView from './pages/UserPageView';
-import UserPagesManager from './pages/UserPagesManager';
-// Ajoute les imports
+import UserPagesManager from './pages/UserPagesManager'; // Le bon manager
 import DashboardAbout from './pages/DashboardAbout';
 import DashboardHelp from './pages/DashboardHelp';
-
 
 
 // --- MODE PORTFOLIO (SOUS-DOMAINE) ---
@@ -51,13 +48,9 @@ const SubdomainApp: React.FC = () => {
 const MainApp = () => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
-
   const isViewerMode = searchParams.get('mode') === 'viewer';
-
-  // 1. Détection des pages d'authentification
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
-  // 2. Si on est sur Login ou Register -> Pas de Layout
   if (isAuthPage) {
     return (
       <Routes>
@@ -67,7 +60,6 @@ const MainApp = () => {
     );
   }
 
-  // 3. Si mode Viewer (Album public) -> Pas de Layout
   if (isViewerMode && location.pathname.startsWith('/album')) {
     return (
       <Routes>
@@ -76,7 +68,6 @@ const MainApp = () => {
     );
   }
 
-  // 4. Si on est sur le Portfolio -> Pas de Layout
   if (location.pathname.startsWith('/portfolio')) {
     return (
       <Routes>
@@ -86,54 +77,41 @@ const MainApp = () => {
     );
   }
 
-  // 5. Sinon (Dashboard, Admin, etc.) -> Avec Layout
-  // C'est ICI qu'il manquait les routes
   return (
     <Layout>
       <Routes>
-
-
-
-
         <Route path="/" element={<LandingPage />} />
         <Route path="/dashboard/about" element={<DashboardAbout />} />
         <Route path="/dashboard/help" element={<DashboardHelp />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/galleries" element={<Dashboard />} />
 
-        {/* --- ROUTES MANQUANTES RESTAURÉES ICI --- */}
         <Route path="/create-album" element={<CreateAlbum />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/legal" element={<LegalPage />} />
 
-        {/* Albums (vue propriétaire) */}
         <Route path="/album/:id" element={<AlbumView />} />
 
-        {/* Profil et Outils */}
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/tools" element={<Tools />} />
 
-        {/* Anciennes Pages (Showcase) */}
-        <Route path="/pages" element={<PagesManager />} />
-        <Route path="/pages/edit/:id?" element={<PageEditor />} />
+        {/* ANCIEN SYSTEME (Si tu veux le garder pour les "Showcase" pages) */}
+        {/* Si tu ne l'utilises plus, tu peux supprimer ces 2 lignes */}
+        <Route path="/pages" element={<UserPagesManager />} />
+      {/*  <Route path="/pages/edit/:id?" element={<PageEditor />} />  */}
 
-        {/* Nouvelles Pages Utilisateur (User Pages) */}
+        {/* NOUVEAU SYSTEME (Portfolio Utilisateur) */}
         <Route path="/dashboard/pages" element={<UserPagesManager />} />
         <Route path="/dashboard/user-page-editor" element={<UserPageEditor />} />
         <Route path="/dashboard/user-page-editor/:id" element={<UserPageEditor />} />
 
-        {/* Blog */}
         <Route path="/manage-blog" element={<BlogManager />} />
-
-        {/* Public Page Wrapper */}
         <Route path="/p/:slug" element={<PublicPageWrapper />} />
 
-        {/* Admin */}
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/admin/reports" element={<AdminReports />} />
         <Route path="/admin/comments" element={<CommentModeration />} />
 
-        {/* Fallback */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Layout>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../utils/api';
 
 const EditProfile = () => {
@@ -10,8 +10,6 @@ const EditProfile = () => {
   const [currentAvatar, setCurrentAvatar] = useState<string>('');
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [currentBanner, setCurrentBanner] = useState<string>('');
-  const [pages, setPages] = useState<any[]>([]);
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchData();
@@ -25,8 +23,6 @@ const EditProfile = () => {
       setServicesDescription(profileRes.data.servicesDescription || '');
       setCurrentAvatar(profileRes.data.avatar || '');
       setCurrentBanner(profileRes.data.bannerImage || '');
-      const pagesRes = await api.get('/pages/mine');
-      setPages(Array.isArray(pagesRes.data) ? pagesRes.data : []);
     } catch (error) {
       console.error(error);
       alert("Erreur chargement profil");
@@ -53,21 +49,6 @@ const EditProfile = () => {
       fetchData();
     } catch (error) {
       alert('Erreur lors de la sauvegarde');
-    }
-  };
-
-  const copyLink = (slug: string) => {
-    const url = `${window.location.origin}/p/${slug}`;
-    navigator.clipboard.writeText(url).then(() => alert('Lien copié !'));
-  };
-
-  const handleDeletePage = async (id: string, title: string) => {
-    if (!window.confirm(`Supprimer la page "${title}" ?`)) return;
-    try {
-        await api.delete(`/pages/${id}`);
-        fetchData();
-    } catch (err) {
-        alert("Erreur suppression");
     }
   };
 
@@ -174,42 +155,7 @@ const EditProfile = () => {
           </button>
         </form>
 
-        {/* MES PAGES */}
-        <div className="mt-12 bg-white/5 p-6 rounded-xl border border-white/10 space-y-4">
-            <div className="flex justify-between items-center border-b border-white/10 pb-2">
-                <h2 className="text-lg font-bold">Mes Pages de Présentation</h2>
-                <button
-                    onClick={() => navigate('/pages/edit')}
-                    className="text-sm bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-full font-bold"
-                >
-                    + Nouvelle Page
-                </button>
-            </div>
-
-            {pages.length === 0 && (
-                <p className="text-gray-400 text-center py-8">
-                    Vous n'avez pas encore créé de page de présentation.
-                </p>
-            )}
-
-            <div className="space-y-3">
-                {pages.map(page => (
-                    <div key={page._id} className="bg-black/20 p-4 rounded-lg flex justify-between items-center">
-                        <div>
-                            <h3 className="font-bold text-white">{page.title}</h3>
-                            <p className="text-xs text-gray-400">/{page.slug}</p>
-                        </div>
-                        <div className="flex gap-2">
-                            <a href={`/p/${page.slug}`} target="_blank" rel="noreferrer" className="text-xs bg-gray-600 hover:bg-gray-500 px-3 py-1 rounded">Voir</a>
-                            <button onClick={() => copyLink(page.slug)} className="text-xs bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded">Partager</button>
-                            <button onClick={() => navigate(`/pages/edit/${page._id}`)} className="text-xs bg-yellow-600 hover:bg-yellow-500 px-3 py-1 rounded">Modifier</button>
-                            <button onClick={() => handleDeletePage(page._id, page.title)} className="text-xs bg-red-600 hover:bg-red-500 px-3 py-1 rounded">Suppr.</button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-
+        {/* NOTE : La gestion des pages a été déplacée vers le menu "Mes Pages" du Dashboard */}
       </div>
     </div>
   );

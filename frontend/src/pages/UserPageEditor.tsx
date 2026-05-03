@@ -1,69 +1,62 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
-import { useNavigate, useParams } from 'react-router-dom'; // Ajouter useParams
+import { useNavigate, useParams } from 'react-router-dom';
 
 const UserPageEditor = () => {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>(); // Récupère l'ID si édition
+  const { id } = useParams<{ id: string }>();
 
-  // État de la page
+  // États de la page
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [sections, setSections] = useState<any[]>([]);
   const [isPublished, setIsPublished] = useState(false);
+  const [showOnBlog, setShowOnBlog] = useState(false);
 
-  // Données annexes
+  // États pour l'image de couverture
+  const [coverImage, setCoverImage] = useState('');
+  const [coverPhotos, setCoverPhotos] = useState<any[]>([]);
+
+  // Données annexes & UI
   const [availableAlbums, setAvailableAlbums] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [loadingPage, setLoadingPage] = useState(false); // Nouveau state pour le chargement
 
-  // Charger les données si on est en mode Édition
+  // 1. Charger les données si édition
   useEffect(() => {
     const fetchPageData = async () => {
-        if (id) {
-            setLoadingPage(true);
-            try {
-                const res = await api.get(`/user-pages/my/${id}`);
-                const pageData = res.data;
+      if (id) {
+        try {
+          const res = await api.get(`/user-pages/my/${id}`);
+          const pageData = res.data;
+          setTitle(pageData.title);
+          setSlug(pageData.slug);
+          setIsPublished(pageData.isPublished || false);
+          setShowOnBlog(pageData.showOnBlog || false);
+          setCoverImage(pageData.coverImage || '');
 
-                // Remplir les states
-                setTitle(pageData.title);
-                setSlug(pageData.slug);
-                setIsPublished(pageData.isPublished);
-
-                // Attention : Il faut remapper les albumsIds pour le select
-                // Le backend renvoie les albums populés ou juste les IDs ?
-                // On suppose qu'il renvoie les IDs ou les objets.
-                const formattedSections = pageData.sections.map((s: any) => ({
-                    ...s,
-                    albumIds: s.albumIds.map((a: any) => a._id || a) // Extrait l'ID si l'objet est peuplé
-                }));
-                setSections(formattedSections);
-
-            } catch (err) {
-                alert("Erreur chargement page");
-                navigate('/dashboard/pages');
-            } finally {
-                setLoadingPage(false);
-            }
+          const formattedSections = pageData.sections.map((s: any) => ({
+            ...s,
+            albumIds: s.albumIds.map((a: any) => a._id || a)
+          }));
+          setSections(formattedSections);
+        } catch (err) {
+          alert("Erreur chargement page");
+          navigate('/dashboard/pages');
         }
+      }
     };
     fetchPageData();
   }, [id, navigate]);
 
-
-  // Charger les albums de l'utilisateur pour le sélecteur
+  // 2. Charger les albums virtuels
   useEffect(() => {
     const fetchAlbums = async () => {
       try {
-        // On récupère tous les albums, comme dans ton autre éditeur
         const res = await api.get('/albums/my/albums');
         if (Array.isArray(res.data)) {
-            //  On ne garde que les galeries virtuelles
-             const virtualAlbums = res.data.filter((a: any) => a.isVirtual === true);
-             setAvailableAlbums(virtualAlbums);
-
+          const virtualAlbums = res.data.filter((a: any) => a.isVirtual === true);
+          setAvailableAlbums(virtualAlbums);
         }
       } catch (err) {
         console.error("Erreur chargement albums", err);
@@ -72,205 +65,292 @@ const UserPageEditor = () => {
     fetchAlbums();
   }, []);
 
-  // Ajouter une section
-  const addSection = (type: 'text' | 'gallery') => {
-    const newSection = {
-      type,
-      content: '',
-      albumIds: [],
-      _id: Date.now().toString() // ID temporaire pour React
+  // 3. Charger les photos pour l'image de couverture
+  /*useEffect(() => {
+    const fetchCoverPhotos = async () => {
+      // On cherche la première section qui a un album sélectionné
+      const sectionWithAlbum = sections.find(s =>
+        (s.type === 'gallery' || s.type === 'split_text_gallery') &&
+        s.albumIds && s.albumIds.length > 0
+      );
+
+      if (sectionWithAlbum) {
+        const albumId = sectionWithAlbum.albumIds[0];
+        try {
+          // CORRECTION ICI : On appelle /photos/:id
+          const res = await api.get(`/albums/photos/${albumId}`);
+
+          // La route renvoie directement un tableau de photos
+          if (res.data && res.data.length > 0) {
+            setCoverPhotos(res.data);
+          } else {
+            setCoverPhotos([]);
+          }
+        } catch (err) {
+          console.error("Impossible de charger les photos pour la couverture", err);
+          setCoverPhotos([]);
+        }
+      } else {
+        setCoverPhotos([]);
+      }
     };
-    setSections([...sections, newSection]);
+
+    fetchCoverPhotos();
+  }, [sections]);  */
+
+  // 3. Charger les photos pour l'image de couverture
+// On utilise une ref pour comparer l'ID précédent et éviter les boucles
+const prevAlbumIdRef = React.useRef<string | null>(null);
+
+useEffect(() => {
+  const fetchCoverPhotos = async () => {
+    const sectionWithAlbum = sections.find(s =>
+      (s.type === 'gallery' || s.type === 'split_text_gallery') &&
+      s.albumIds && s.albumIds.length > 0
+    );
+
+    const currentAlbumId = sectionWithAlbum ? sectionWithAlbum.albumIds[0] : null;
+
+    // CORRECTION : On ne lance la requête que si l'ID est différent du précédent
+    if (currentAlbumId && currentAlbumId !== prevAlbumIdRef.current) {
+      try {
+        const res = await api.get(`/albums/photos/${currentAlbumId}`);
+        if (res.data && res.data.length > 0) {
+          setCoverPhotos(res.data);
+          // Optionnel : auto-sélection si pas d'image
+          // if (!coverImage) setCoverImage(res.data[0].filename);
+        } else {
+          setCoverPhotos([]);
+        }
+      } catch (err) {
+        console.error("Erreur chargement photos cover", err);
+        setCoverPhotos([]);
+      }
+    }
+
+    // Mise à jour de la ref
+    prevAlbumIdRef.current = currentAlbumId;
   };
 
-  // Mettre à jour le contenu d'une section
+  fetchCoverPhotos();
+}, [sections]); // On garde sections en dépendance mais la condition gère la fréquence
+
+  // Fonctions sections
+  const addSection = (type: 'text' | 'gallery' | 'split_text_gallery') => {
+    setSections([...sections, { type, content: '', albumIds: [], _id: Date.now().toString() }]);
+  };
+
   const updateSectionContent = (index: number, field: string, value: any) => {
     const updatedSections = [...sections];
-    // Cas spécial pour albumIds (on veut un tableau)
-    if (field === 'albumIds') {
-        updatedSections[index][field] = [value];
-    } else {
-        updatedSections[index][field] = value;
-    }
+    if (field === 'albumIds') updatedSections[index][field] = [value];
+    else updatedSections[index][field] = value;
     setSections(updatedSections);
   };
 
-  // Supprimer une section
   const removeSection = (index: number) => {
     setSections(sections.filter((_, i) => i !== index));
   };
 
-  // Sauvegarder la page
-  // Sauvegarder la page
-const handleSave = async (publish = false) => {
-  if (!title || !slug) {
-    setMessage('Le titre et l\'URL (slug) sont obligatoires.');
-    return;
-  }
+  // Sauvegarder
+  const handleSave = async () => {
+    if (!title || !slug) {
+      setMessage('Le titre et l\'URL sont obligatoires.');
+      return;
+    }
 
-  setLoading(true);
-  try {
-    const payload = {
-      id, // IMPORTANT : On envoie l'ID pour que le backend sache s'il faut updater ou créer
-      title,
-      slug,
-      sections,
-      isPublished: publish
-    };
+    setLoading(true);
+    try {
+      const payload = {
+        id,
+        title,
+        slug,
+        sections,
+        isPublished,
+        showOnBlog,
+        coverImage
+      };
 
-    await api.post('/user-pages/my/save', payload);
+      await api.post('/user-pages/my/save', payload);
+      setMessage('Page sauvegardée !');
 
-    setMessage('Page sauvegardée avec succès !');
-
-    // Rediriger vers la liste après sauvegarde réussie
-    setTimeout(() => {
+      setTimeout(() => {
         navigate('/dashboard/pages');
-    }, 1000);
+      }, 1000);
 
-  } catch (err: any) {
-    console.error(err);
-    setMessage(err.response?.data?.error || 'Erreur lors de la sauvegarde');
-  } finally {
-    setLoading(false);
-  }
-};
+    } catch (err: any) {
+      console.error(err);
+      setMessage(err.response?.data?.error || 'Erreur serveur');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Aide à la saisie du slug
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setTitle(val);
-    // Auto-génération du slug si vide
-    if (!slug) {
-        setSlug(val.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''));
+    if (!slug && !id) {
+      setSlug(val.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''));
     }
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-gray-900">
-       <div className="relative z-10 min-h-screen pb-20">
-          <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
-      <h1 className="text-3xl font-bold mb-8 text-yellow-400">
-               {id ? 'Modifier la Page' : 'Créer une Page Personnelle'}
-      </h1>
-        <p className="text-gray-400 mb-6 text-sm">
-            Créez des pages personnalisées (Tarifs, Matériel, About) accessibles via votre profil.
-        </p>
+    <div className="min-h-screen bg-gray-900 text-white p-8">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8 text-yellow-400">
+          {id ? 'Modifier la Page' : 'Créer une Page'}
+        </h1>
 
-        {/* Messages */}
         {message && <div className="bg-blue-600 p-3 rounded mb-4 text-center">{message}</div>}
 
-        {/* Informations Principales */}
-        <div className="bg-gray-800 p-6 rounded-lg mb-6 shadow-lg">
+        {/* Infos Principales */}
+        <div className="bg-gray-800 p-6 rounded-lg mb-6">
           <div className="mb-4">
-            <label className="block text-gray-400 mb-1">Titre de la page</label>
+            <label className="block text-gray-400 mb-1">Titre</label>
             <input
               type="text"
-              placeholder="Ex: Mes Tarifs, Mon Matériel"
               value={title}
               onChange={handleTitleChange}
-              className="w-full p-3 bg-gray-700 rounded border border-gray-600 focus:border-yellow-500 outline-none"
+              className="w-full p-3 bg-gray-700 rounded"
+              placeholder="Ex: Mes Tarifs"
             />
           </div>
           <div className="mb-4">
             <label className="block text-gray-400 mb-1">URL (Slug)</label>
-            <div className="flex items-center bg-gray-700 rounded border border-gray-600">
-              <span className="text-gray-500 pl-3 text-sm whitespace-nowrap">/portfolio/votre-nom/</span>
-              <input
-                type="text"
-                placeholder="mes-tarifs"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                className="w-full p-3 bg-transparent outline-none"
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
             <input
-                type="checkbox"
-                checked={isPublished}
-                onChange={(e) => setIsPublished(e.target.checked)}
-                id="publish"
-                className="w-4 h-4"
+              type="text"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+              className="w-full p-3 bg-gray-700 rounded"
+              placeholder="mes-tarifs"
             />
-            <label htmlFor="publish" className="text-sm text-gray-400">Publier immédiatement</label>
+          </div>
+
+          {/* CHOIX IMAGE DE COUVERTURE */}
+          <div className="mb-4 border-t border-gray-700 pt-4">
+            <label className="block text-gray-400 mb-1 font-bold">Image de couverture (Vignette)</label>
+
+            {coverPhotos.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                <select
+                  className="w-full bg-gray-700 p-3 rounded"
+                  value={coverImage}
+                  onChange={(e) => setCoverImage(e.target.value)}
+                >
+                  <option value="">-- Choisir une image de l'album --</option>
+                  {coverPhotos.map((photo: any) => (
+                    <option key={photo._id} value={photo.filename}>
+                      {photo.title || photo.filename}
+                    </option>
+                  ))}
+                </select>
+
+                {coverImage && (
+                  <div className="flex items-center gap-4 mt-2">
+                    <img src={`/uploads/${coverImage}`} className="h-20 w-20 object-cover rounded border border-gray-600" alt="Aperçu" />
+                    <button
+                      type="button"
+                      onClick={() => setCoverImage('')}
+                      className="text-xs text-red-400 hover:text-red-300"
+                    >
+                      Supprimer l'image
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm italic">
+                Ajoutez une section "Galerie" et sélectionnez un album pour pouvoir choisir une image.
+              </p>
+            )}
+          </div>
+
+          {/* SECTION VISIBILITÉ */}
+          <div className="border-t border-gray-700 pt-4 mt-4">
+             <h3 className="text-lg font-bold text-white mb-3">Visibilité</h3>
+             <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                    type="button"
+                    onClick={() => setIsPublished(!isPublished)}
+                    className={`flex-1 p-3 rounded-lg border-2 transition font-bold ${isPublished ? 'bg-green-800 border-green-500 text-white' : 'bg-gray-700 border-gray-600 text-gray-400'}`}
+                >
+                    {isPublished ? '✓ Publié sur le Portfolio' : '✕ Hors-ligne (Portfolio)'}
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => setShowOnBlog(!showOnBlog)}
+                    className={`flex-1 p-3 rounded-lg border-2 transition font-bold ${showOnBlog ? 'bg-blue-800 border-blue-500 text-white' : 'bg-gray-700 border-gray-600 text-gray-400'}`}
+                >
+                    {showOnBlog ? '✓ Visible sur le Blog' : '✕ Masqué du Blog'}
+                </button>
+             </div>
           </div>
         </div>
 
         {/* Liste des Sections */}
         {sections.map((section, index) => (
-          <div key={section._id} className="bg-gray-800 p-5 rounded-lg mb-4 border-l-4 border-yellow-500">
+          <div key={section._id || index} className="bg-gray-800 p-5 rounded-lg mb-4 border-l-4 border-yellow-500">
             <div className="flex justify-between items-center mb-3">
               <span className="font-bold text-yellow-400 uppercase text-sm">
-                {section.type === 'text' ? 'Bloc Texte' : 'Bloc Galerie'}
+                {section.type === 'text' ? 'Bloc Texte' : section.type === 'gallery' ? 'Bloc Galerie' : 'Bloc Mixte'}
               </span>
-              <button onClick={() => removeSection(index)} className="text-red-500 hover:text-red-400 text-sm font-bold">
-                Supprimer
-              </button>
+              <button onClick={() => removeSection(index)} className="text-red-500 text-sm">Supprimer</button>
             </div>
 
             {section.type === 'text' && (
               <textarea
-                placeholder="Écrivez votre contenu ici..."
-                className="w-full h-32 bg-gray-700 p-3 rounded text-gray-200"
+                className="w-full h-32 bg-gray-700 p-3 rounded"
                 value={section.content || ''}
                 onChange={(e) => updateSectionContent(index, 'content', e.target.value)}
               />
             )}
-
             {section.type === 'gallery' && (
-              <div className="space-y-2">
-                <label className="text-gray-400 text-sm">Choisir un album à afficher :</label>
-                <select
-                  className="w-full bg-gray-700 p-3 rounded"
-                  onChange={(e) => updateSectionContent(index, 'albumIds', e.target.value)}
-                  value={section.albumIds[0] || ''}
-                >
-                  <option value="">-- Sélectionner --</option>
-                  {availableAlbums.map(alb => (
-                    <option key={alb._id} value={alb._id}>{alb.title}</option>
-                  ))}
-                </select>
+              <select
+                className="w-full bg-gray-700 p-3 rounded"
+                onChange={(e) => updateSectionContent(index, 'albumIds', e.target.value)}
+                value={section.albumIds[0] || ''}
+              >
+                <option value="">-- Choisir un album --</option>
+                {availableAlbums.map(alb => (<option key={alb._id} value={alb._id}>{alb.title}</option>))}
+              </select>
+            )}
+            {section.type === 'split_text_gallery' && (
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="w-full md:w-[30%]">
+                  <textarea
+                    className="w-full h-40 bg-gray-700 p-3 rounded text-sm mt-1"
+                    value={section.content || ''}
+                    onChange={(e) => updateSectionContent(index, 'content', e.target.value)}
+                  />
+                </div>
+                <div className="w-full md:w-[70%]">
+                  <select
+                    className="w-full bg-gray-700 p-3 rounded mt-1"
+                    onChange={(e) => updateSectionContent(index, 'albumIds', e.target.value)}
+                    value={section.albumIds[0] || ''}
+                  >
+                    <option value="">-- Sélectionner --</option>
+                    {availableAlbums.map(alb => (<option key={alb._id} value={alb._id}>{alb.title}</option>))}
+                  </select>
+                </div>
               </div>
             )}
           </div>
         ))}
 
         {/* Boutons Ajouter */}
-        <div className="flex gap-4 mb-8">
-          <button
-            onClick={() => addSection('text')}
-            className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 rounded font-bold transition"
-          >
-            + Ajouter du Texte
-          </button>
-          <button
-            onClick={() => addSection('gallery')}
-            className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 rounded font-bold transition"
-          >
-            + Ajouter une Galerie
-          </button>
+        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+          <button onClick={() => addSection('text')} className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 rounded font-bold">+ Texte</button>
+          <button onClick={() => addSection('gallery')} className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 rounded font-bold">+ Galerie</button>
+          <button onClick={() => addSection('split_text_gallery')} className="flex-1 py-3 bg-teal-600 hover:bg-teal-500 rounded font-bold">+ Mixte</button>
         </div>
 
-        {/* Boutons Sauvegarde */}
-        <div className="flex gap-4">
-          <button
-            onClick={() => handleSave(false)}
-            disabled={loading}
-            className="flex-1 py-3 bg-gray-600 hover:bg-gray-500 rounded font-bold transition"
-          >
-            {loading ? 'Sauvegarde...' : 'Enregistrer le brouillon'}
-          </button>
-          <button
-            onClick={() => handleSave(true)}
-            disabled={loading}
-            className="flex-1 py-3 bg-green-600 hover:bg-green-500 rounded font-bold transition"
-          >
-            {loading ? 'Publication...' : 'Sauvegarder et Publier'}
-          </button>
-        </div>
+        {/* Sauvegarde */}
+        <button onClick={handleSave} disabled={loading} className="w-full py-3 bg-gradient-to-r from-green-500 to-teal-600 rounded font-bold text-lg">
+          {loading ? 'Sauvegarde...' : 'Enregistrer les modifications'}
+        </button>
 
       </div>
-    </div>
     </div>
   );
 };
