@@ -18,7 +18,7 @@ import albumRoutes from './routes/albumRoutes';
 import photoRoutes from './routes/photoRoutes';
 import adminRoutes from './routes/adminRoutes';
 import userRoutes from './routes/userRoutes';
-import pageRoutes from './routes/pageRoutes';
+//import pageRoutes from './routes/pageRoutes';
 import reportRoutes from './routes/reportRoutes';
 import userPagesRoute from './routes/userPagesRoutes';
 
@@ -69,7 +69,7 @@ app.use('/api/photos', photoRoutes);
 app.use('/api/admin', adminRoutes);
 // ajout v6.0
 app.use('/api/users', userRoutes);
-app.use('/api/pages', pageRoutes);
+//app.use('/api/pages', pageRoutes);
 // Routes pour les pages personnelles des utilisateurs
 app.use('/api/user-pages', userPagesRoute);
 

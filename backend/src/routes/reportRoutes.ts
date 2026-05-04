@@ -2,14 +2,15 @@
 
 import express, { Request, Response } from 'express';
 import Report from '../models/Report';
-import Album from '../models/Album'; // Import nécessaire
-import Page from '../models/Page';   // Import nécessaire
+import Album from '../models/Album';
+//import Page from '../models/Page';
+import UserPage from '../models/UserPage'; // NOUVEAU : Import du nouveau modèle
 import { authenticateToken } from '../middleware/auth';
 import nodemailer from 'nodemailer';
 
 const router = express.Router();
 
-// Configuration simple pour l'alerte admin
+// Configuration email
 const adminTransporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT || '587'),
@@ -20,29 +21,6 @@ const adminTransporter = nodemailer.createTransport({
   },
 });
 
-
-
-
-// --- POST : Créer un signalement (inchangé) ---
-/*router.post('/', async (req: Request, res: Response) => {
-  try {
-    const { type, targetId, reason } = req.body;
-    if (!type || !targetId || !reason) return res.status(400).json({ error: 'Informations manquantes' });
-
-    // Vérification existence
-    let exists = false;
-    if (type === 'album') exists = !!(await Album.findById(targetId));
-    if (type === 'page') exists = !!(await Page.findById(targetId));
-    if (!exists) return res.status(404).json({ error: 'Cible introuvable' });
-
-    const newReport = new Report({ type, targetId, reason });
-    await newReport.save();
-    res.status(201).json({ message: 'Signalement envoyé. Merci.' });
-  } catch (error) {
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-});*/
-
 router.post('/', async (req: Request, res: Response) => {
   try {
     const { type, targetId, reason } = req.body;
@@ -50,13 +28,15 @@ router.post('/', async (req: Request, res: Response) => {
 
     let exists = false;
     if (type === 'album') exists = !!(await Album.findById(targetId));
-    if (type === 'page') exists = !!(await Page.findById(targetId));
+  //  if (type === 'page') exists = !!(await Page.findById(targetId));
+    if (type === 'user_page') exists = !!(await UserPage.findById(targetId)); // NOUVEAU : Vérifie le nouveau modèle
+
     if (!exists) return res.status(404).json({ error: 'Cible introuvable' });
 
     const newReport = new Report({ type, targetId, reason });
     await newReport.save();
 
-    // --- NOUVEAU : ENVOI MAIL ADMIN ---
+    // Envoi Mail Admin
     const adminEmail = process.env.ADMIN_EMAIL || 'helioscope@proton.me';
     try {
         await adminTransporter.sendMail({
@@ -73,9 +53,7 @@ router.post('/', async (req: Request, res: Response) => {
         });
     } catch (mailErr) {
         console.error("Erreur envoi mail signalement:", mailErr);
-        // On continue même si le mail échoue
     }
-    // ----------------------------------
 
     res.status(201).json({ message: 'Signalement envoyé. Merci.' });
   } catch (error) {
@@ -83,31 +61,33 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
-// --- GET : Voir les signalements (ENRICHIE) ---
+// --- GET : Voir les signalements (Enrichié pour UserPage) ---
 router.get('/', authenticateToken, async (req: Request, res: Response) => {
   if (!(req as any).user?.isAdmin) return res.status(403).json({ error: 'Accès refusé' });
 
   try {
     const reports = await Report.find({ status: 'pending' }).sort({ createdAt: -1 }).lean();
 
-    // On va chercher les détails pour chaque signalement
     const enrichedReports = await Promise.all(reports.map(async (report) => {
       let targetDetails: any = null;
 
-      if (report.type === 'page') {
+      /*if (report.type === 'page') {
         targetDetails = await Page.findById(report.targetId)
           .select('title userId slug')
-          .populate('userId', 'name email'); // On récupère le nom du propriétaire
+          .populate('userId', 'name email');
+      } else */
+      if (report.type === 'user_page') {
+        // NOUVEAU : On récupère les infos de la nouvelle page
+        targetDetails = await UserPage.findById(report.targetId)
+          .select('title userId slug')
+          .populate('userId', 'name email');
       } else if (report.type === 'album') {
         targetDetails = await Album.findById(report.targetId)
           .select('title userId coverImage')
           .populate('userId', 'name email');
       }
 
-      return {
-        ...report,
-        targetDetails // On attache les détails ici
-      };
+      return { ...report, targetDetails };
     }));
 
     res.json(enrichedReports);
@@ -117,7 +97,6 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
   }
 });
 
-// --- PATCH : Résoudre (inchangé) ---
 router.patch('/:id/resolve', authenticateToken, async (req: Request, res: Response) => {
   if (!(req as any).user?.isAdmin) return res.status(403).json({ error: 'Accès refusé' });
   try {

@@ -5,6 +5,7 @@ import { authenticateToken } from '../middleware/auth';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import nodemailer from 'nodemailer';
 
 const router = express.Router();
 
@@ -103,43 +104,7 @@ router.put('/me', authenticateToken, upload.fields([
   }
 });
 
-// 4. PUT METTRE A JOUR PROFIL (Gestion Avatar ET Banner)
-// On utilise .fields pour accepter plusieurs types de fichiers
 
-
-
-/*router.put('/me', authenticateToken, upload.fields([
-  { name: 'avatar', maxCount: 1 },
-  { name: 'banner', maxCount: 1 }
-]), async (req: Request, res: Response) => {
-  try {
-
-
-    const updates: any = {};
-
-    if (bio !== undefined) updates.bio = bio;
-
-    // Gestion des fichiers uploadés
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-
-    if (files && files['avatar']) {
-      updates.avatar = files['avatar'][0].filename;
-    }
-    if (files && files['banner']) {
-      updates.bannerImage = files['banner'][0].filename;
-    }
-
-    if (showcaseAlbums) updates.showcaseAlbums = JSON.parse(showcaseAlbums);
-
-    const user = await User.findByIdAndUpdate(req.user.userId, updates, { new: true }).select('-password');
-    if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
-
-    res.json(user);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Erreur mise à jour profil' });
-  }
-}); */
 
 // 5. GET PROFIL PUBLIC
 router.get('/public/:id', async (req: Request, res: Response) => {
@@ -155,6 +120,51 @@ router.get('/public/:id', async (req: Request, res: Response) => {
     res.json(user);
   } catch (error) {
     res.status(500).json({ error: 'Erreur' });
+  }
+});
+
+// --- CONFIGURATION EMAIL (identique à reportRoutes) ---
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
+// 6. POST CONTACT (Public — envoie un email au propriétaire du portfolio)
+router.post('/contact', async (req: Request, res: Response) => {
+  const { toUserId, fromName, fromEmail, message } = req.body;
+
+  if (!toUserId || !fromName || !fromEmail || !message) {
+    return res.status(400).json({ error: 'Tous les champs sont obligatoires' });
+  }
+
+  try {
+    const recipient = await User.findById(toUserId).select('email name');
+    if (!recipient) return res.status(404).json({ error: 'Utilisateur introuvable' });
+
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM,
+      to: recipient.email,
+      replyTo: fromEmail,
+      subject: `📩 Message de ${fromName} via Hélioscope`,
+      html: `
+        <h3>Nouveau message depuis votre portfolio</h3>
+        <p><strong>De :</strong> ${fromName} &lt;${fromEmail}&gt;</p>
+        <p><strong>Message :</strong></p>
+        <p>${message.replace(/\n/g, '<br>')}</p>
+        <hr>
+        <p style="color:#999;font-size:12px">Répondez directement à cet email pour contacter ${fromName}.</p>
+      `
+    });
+
+    res.json({ message: 'Email envoyé avec succès' });
+  } catch (error) {
+    console.error("Erreur envoi contact:", error);
+    res.status(500).json({ error: 'Erreur envoi email' });
   }
 });
 

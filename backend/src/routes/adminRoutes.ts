@@ -79,26 +79,6 @@ router.put('/users/:id', async (req: Request, res: Response) => {
   }
 });
 
-// --- POST : Réinitialiser mot de passe ---
-/*router.post('/users/:id/reset-password', async (req: Request, res: Response) => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
-
-    const tempPassword = Math.random().toString(36).slice(-8);
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
-
-    user.password = hashedPassword;
-    await user.save();
-
-    res.json({
-      message: 'Mot de passe réinitialisé',
-      newPassword: tempPassword,
-      user: user.email
-    });
-  } catch (error) { res.status(500).json({ error: 'Erreur reset password' }); }
-});*/
-
 
 // 3. POST : Réinitialiser mot de passe
 router.post('/users/:id/reset-password', async (req: Request, res: Response) => {
