@@ -27,9 +27,17 @@ const AdminReports = () => {
   // Fonction pour générer le lien de visualisation
   const getLink = (report: any) => {
       if(!report.targetDetails) return '#';
-      if(report.type === 'page') {
+    /*  if(report.type === 'page') {
           return `/p/${report.targetDetails.slug}`;
+      } */
+      // voir la page signalée
+      if (report.type === 'user_page') {
+          const username = report.targetDetails.userId?.name;
+          const slug = report.targetDetails.slug;
+          if (!username || !slug) return '#';
+          return `/portfolio/${username}/${slug}`;  // ← et non /p/
       }
+
       if(report.type === 'album') {
           return `/album/${report.targetDetails._id}?mode=viewer`;
       }

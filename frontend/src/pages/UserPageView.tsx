@@ -9,7 +9,10 @@ const UserPageView = () => {
   const [page, setPage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
+  // Pour signalement
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  //   fin
   const [lightboxData, setLightboxData] = useState<{ photos: any[], index: number } | null>(null);
 
   useEffect(() => {
@@ -45,6 +48,27 @@ const UserPageView = () => {
   if (!page) return null;
 
   const sections = page.sections || [];
+
+  // pour lesignalement
+
+  const handleSendReport = async () => {
+        if (!reportReason.trim()) {
+            alert("Merci d'indiquer la raison.");
+            return;
+        }
+        try {
+            await api.post('/reports', {
+                type: 'Signalement', // Pour le nouveau système
+                targetId: page._id,
+                reason: reportReason
+            });
+            alert("Signalement envoyé.");
+            setShowReportModal(false);
+            setReportReason('');
+        } catch (err) {
+            alert("Erreur");
+        }
+    };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -152,6 +176,36 @@ const UserPageView = () => {
           initialIndex={lightboxData.index}
           onClose={closeLightbox}
         />
+      )}
+      {/* Bouton Signalement Flottant */}
+      <button
+        onClick={() => setShowReportModal(true)}
+        className="fixed bottom-20 right-6 z-50 bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white p-3 rounded-full shadow-lg text-xs border border-red-400/30 transition"
+        title="Signaler"
+      >
+        🚩
+      </button>
+
+      {/* Modale de Signalement */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4">
+          <div className="bg-gray-900 border border-red-500/30 rounded-xl p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold text-red-400 mb-4">Signaler un contenu</h3>
+            <p className="text-sm text-gray-400 mb-4">
+                Page : <span className="text-white font-bold">{page?.title}</span>
+            </p>
+            <textarea
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              placeholder="Raison du signalement (obligatoire)..."
+              className="w-full bg-black/30 p-3 rounded border border-white/10 text-white h-24 mb-4"
+            />
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setShowReportModal(false)} className="px-4 py-2 text-sm text-gray-400">Annuler</button>
+              <button onClick={handleSendReport} className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-sm font-bold">Envoyer</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

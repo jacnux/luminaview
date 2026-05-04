@@ -14,7 +14,7 @@ import Register from './pages/Register';
 import AlbumView from './pages/AlbumView';
 import EditProfile from './pages/EditProfile';
 //import PageEditor from './pages/PageEditor'; // Ancien éditeur (Showcase) - à garder si tu l'utilises encore
-import PublicPage from './pages/PublicPage';
+//import PublicPage from './pages/PublicPage';
 import Tools from './pages/Tools';
 import AdminUsers from './pages/AdminUsers';
 import CreateAlbum from './pages/CreateAlbum';
@@ -31,15 +31,32 @@ import DashboardHelp from './pages/DashboardHelp';
 
 
 // --- MODE PORTFOLIO (SOUS-DOMAINE) ---
+/*const SubdomainApp: React.FC = () => {
+  const slug = getSubdomain();
+  if (!slug) return <Navigate to="https://helioscope.fr" />;
+  return (
+    <Routes>
+      <Route path="/" element={<PortfolioPage username={slug} />} />
+      <Route path="/legal" element={<LegalPage />} />
+      <Route path="/album/:id" element={<AlbumView />} />
+      <Route path="/:slug" element={<UserPageView />} />
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  );
+};*/
+
 const SubdomainApp: React.FC = () => {
   const slug = getSubdomain();
   if (!slug) return <Navigate to="https://helioscope.fr" />;
   return (
     <Routes>
-      <Route path="/" element={<PublicPage slug={slug} />} />
+      {/* ✅ On passe par un chemin fictif pour que useParams fonctionne */}
+      <Route path="/" element={<Navigate to={`/portfolio/${slug}`} replace />} />
+      <Route path="/portfolio/:username" element={<PortfolioPage />} />
+      <Route path="/portfolio/:username/:slug" element={<UserPageView />} />
       <Route path="/legal" element={<LegalPage />} />
       <Route path="/album/:id" element={<AlbumView />} />
-      <Route path="*" element={<Navigate to="/" />} />
+      <Route path="*" element={<Navigate to={`/portfolio/${slug}`} replace />} />
     </Routes>
   );
 };
@@ -106,7 +123,7 @@ const MainApp = () => {
         <Route path="/dashboard/user-page-editor/:id" element={<UserPageEditor />} />
 
         <Route path="/manage-blog" element={<BlogManager />} />
-        <Route path="/p/:slug" element={<PublicPageWrapper />} />
+    {/*   <Route path="/p/:slug" element={<PublicPageWrapper />} />  */}
 
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/admin/reports" element={<AdminReports />} />
@@ -118,12 +135,11 @@ const MainApp = () => {
   );
 };
 
-
-const PublicPageWrapper = () => {
+/* const PublicPageWrapper = () => {
   const { slug } = useParams<{ slug: string }>();
   if (!slug) return <div>Page introuvable</div>;
   return <PublicPage slug={slug} />;
-};
+};  */
 
 // --- COMPOSANT PRINCIPAL ---
 const App: React.FC = () => {
