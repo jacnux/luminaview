@@ -1,6 +1,4 @@
-
-
-# Manuel Utilisateur (Version 1.3)
+# Manuel Utilisateur (Version 2.0)
 
 Bienvenue sur Hélioscope. Ce guide vous accompagne dans la prise en main de votre espace.
 
@@ -36,7 +34,7 @@ Cette section vous permet de créer un site vitrine personnel.
 
 *   **Créer une page** : Donnez un titre (ex: "Mes Tarifs") et un slug (l'URL, ex: `tarifs`).
 *   **Ajouter des sections** :
-    *   **Bloc Texte** : Pour rédiger vos présentations.
+    *   **Bloc Texte** : Pour rédiger vos présentations en Markdown enrichi (voir section 6).
     *   **Bloc Galerie** : Sélectionnez un de vos albums ou galeries pour l'afficher.
 *   **Publier** : Une fois publié, la page sera visible à l'adresse `helioscope.fr/portfolio/votre-pseudo/votre-slug`.
 *   **Mettre en avant** : Sur votre profil principal, les pages publiées apparaîtront comme des onglets cliquables.
@@ -54,7 +52,83 @@ Cette section vous permet de créer un site vitrine personnel.
 
 ---
 
+### 6. Mise en forme Markdown dans les blocs texte
+
+Les blocs texte de vos pages supportent le **Markdown enrichi** avec HTML inline.
+
+#### Titres et listes
+
+```markdown
+# Mon titre principal
+## Sous-titre
+
+* Élément de liste
+* Autre élément
+```
+
+#### Images
+
+Afficher une image seule :
+```markdown
+![Description](/uploads/ma-photo.jpg)
+```
+
+Afficher une image **redimensionnée** (HTML inline requis) :
+```markdown
+<img src="/uploads/ma-photo.jpg" alt="Description" width="300">
+```
+
+Image **cliquable** (lien vers un album) :
+```markdown
+[![Description](/uploads/ma-photo.jpg)](https://helioscope.fr/album/mon-album)
+```
+
+Image redimensionnée ET cliquable :
+```markdown
+<a href="https://helioscope.fr/album/mon-album">
+  <img src="/uploads/ma-photo.jpg" alt="Description" width="300">
+</a>
+```
+
+#### Liens texte
+
+```markdown
+[Voir l'album](https://helioscope.fr/album/mon-album)
+```
+
+#### Retours à la ligne
+
+| Besoin | Syntaxe |
+|--------|---------|
+| Nouveau paragraphe | Laisser une ligne vide entre les blocs |
+| Saut de ligne simple | Terminer la ligne par deux espaces puis Entrée |
+| Saut de ligne forcé (HTML) | `<br>` dans le texte |
+
+Exemple avec image + saut de ligne + lien :
+```markdown
+<img src="/uploads/expo.jpg" alt="Montage" width="200"><br>
+[À la manière de](https://helioscope.fr/album/mon-album?mode=viewer)
+```
+
+#### Liste d'expositions avec vignettes
+
+```markdown
+# Mes expositions
+
+* Montage
+* <img src="/uploads/expo.jpg" alt="À la manière de" width="150"><br>[À la manière de](https://helioscope.fr/album/mon-album?mode=viewer)
+* Cinq Sens. - Impressions
+```
+
+#### Texte en couleur / style avancé
+
+Pour personnaliser la couleur du texte dans un bloc :
+```html
+<span style="color: white;">Mon texte en blanc</span>
+<span style="color: #e8af34;">Mon texte doré</span>
+```
+
+---
+
 ### Besoin d'aide ?
 Une question ? Contactez-nous via le formulaire de contact ou consultez notre FAQ.
-
-*(Ceci est une base que tu peux copier-coller dans une page "À propos" ou "Aide" sur ton site).*

@@ -22,7 +22,10 @@ export const getAlbumPhotos = async (req: Request, res: Response) => {
 
     // LOGIQUE V6 : Si c'est virtuel, on cherche par tags
     if (album.isVirtual && album.tags && album.tags.length > 0) {
-      photos = await Photo.find({ tags: { $in: album.tags } }).sort({ createdAt: -1 });
+      photos = await Photo.find({
+        tags: { $in: album.tags },
+        userId: album.userId   // ✅ scope à l'owner de l'album
+         }).sort({ createdAt: -1 });
     } else {
       // Sinon, on cherche par albumId (classique)
       photos = await Photo.find({ albumId: req.params.id });

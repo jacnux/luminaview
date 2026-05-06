@@ -34,44 +34,7 @@ router.get('/my/:id', authenticateToken, async (req: Request, res: Response) => 
   }
 });
 
-// 3. Créer ou Mettre à jour une page
-/* router.post('/my/save', authenticateToken, async (req: Request, res: Response) => {
-  try {
-    const { id, title, slug, sections, isPublished, showOnBlog } = req.body;
-    const userId = req.user.userId;
 
-    if (!title || !slug) return res.status(400).json({ error: 'Titre et slug obligatoires' });
-
-    // Nettoyage des sections
-    const cleanSections = sections.map((s: any) => {
-      const { _id, ...rest } = s;
-      return rest;
-    });
-
-    const cleanSlug = slug.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-
-    if (id) {
-      // UPDATE
-      const updated = await UserPage.findOneAndUpdate(
-        { _id: id, userId },
-        { title, slug: cleanSlug, sections: cleanSections, isPublished, showOnBlog },
-        { new: true }
-      );
-      if (!updated) return res.status(404).json({ error: 'Page non trouvée' });
-      res.json(updated);
-    } else {
-      // CREATE
-      const newPage = new UserPage({ userId, title, slug: cleanSlug, sections: cleanSections, isPublished, showOnBlog });
-      await newPage.save();
-      res.status(201).json(newPage);
-    }
-  } catch (error: any) {
-    console.error(error);
-    if (error.code === 11000) return res.status(400).json({ error: 'Ce slug existe déjà.' });
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-});
-*/
 
 // 3. Créer ou Mettre à jour une page
 router.post('/my/save', authenticateToken, async (req: Request, res: Response) => {
@@ -88,8 +51,12 @@ router.post('/my/save', authenticateToken, async (req: Request, res: Response) =
       return rest;
     });
 
+
     const cleanSlug = slug.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
+      // AJOUTER CES 2 LIGNES ICI
+      if (cleanSlug.length < 2)
+          return res.status(400).json({ error: 'Le slug doit contenir au moins 2 caractères.' });
     if (id) {
       // UPDATE
       const updated = await UserPage.findOneAndUpdate(
@@ -107,13 +74,14 @@ router.post('/my/save', authenticateToken, async (req: Request, res: Response) =
       await newPage.save();
       res.status(201).json(newPage);
     }
-  } catch (error: any) {
-    console.error(error);
-    if (error.code === 11000) return res.status(400).json({ error: 'Ce slug existe déjà.' });
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-});
-
+    } catch (error: any) {
+         if (error.code === 11000) {
+             return res.status(409).json({ error: 'Ce slug existe déjà pour cette page.' });
+         }
+         console.error('Erreur /my/save:', error);  // ← logge seulement les vraies erreurs
+         res.status(500).json({ error: 'Erreur serveur' });
+      }
+      });
 
 // 4. Supprimer une page
 router.delete('/my/:id', authenticateToken, async (req: Request, res: Response) => {
@@ -179,19 +147,28 @@ router.get('/:username', async (req: Request, res: Response) => {
 
                 let photos: any[] = [];
                 const selectFields = 'filename title description';
+                    if (album.isVirtual) {
+                          let query: any = {
+                            userId: user._id  // ← AJOUTER : filtre sur le propriétaire de la page
+                          };
+                          if (album.virtualFilter === 'tag' && album.filterValue) {
+                            const tagsList = album.filterValue.split(',').map((t: string) => t.trim()).filter(t => t);
+                            const positiveTags = tagsList.filter(t => !t.startsWith('-'));
+                            const negativeTags = tagsList.filter(t => t.startsWith('-')).map(t => t.substring(1));
 
-                if (album.isVirtual) {
-                    let query: any = {};
-                    if (album.virtualFilter === 'tag' && album.filterValue) {
-                        const tagsList = album.filterValue.split(',').map((t: string) => t.trim());
-                        query.tags = { $all: tagsList };
-                    } else if (album.virtualFilter === 'date') {
-                        query.createdAt = { $gte: album.startDate, $lte: album.endDate };
-                    }
-                    if (Object.keys(query).length > 0) {
-                        photos = await Photo.find(query).select(selectFields).sort({ createdAt: -1 });
-                    }
-                } else {
+                            if (positiveTags.length > 0) {
+                              query.tags = { $all: positiveTags };
+                              if (negativeTags.length > 0) query.tags.$nin = negativeTags; // ← support tags exclus
+                            }
+
+                          } else if (album.virtualFilter === 'date') {
+                            query.createdAt = { $gte: album.startDate, $lte: album.endDate };
+                          }
+
+                          if (Object.keys(query).length > 1) { // > 1 car userId est toujours présent
+                            photos = await Photo.find(query).select(selectFields).sort({ createdAt: -1 });
+                          }
+                        } else {
                     photos = await Photo.find({ albumId: album._id }).select(selectFields).sort({ index: 1 });
                 }
                 album.photos = photos;

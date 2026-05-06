@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import ReactMarkdown from 'react-markdown';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 
 const BlogManager = () => {
   const [posts, setPosts] = useState<any[]>([]);
@@ -174,7 +174,7 @@ Astuce :
                 <div className="prose prose-sm max-w-none text-gray-300">
                     {title ? <h1 className="text-xl font-bold text-white mb-2">{title}</h1> : <p className="text-gray-600 italic">Le titre apparaîtra ici...</p>}
                     <div className="overflow-hidden prose-p:my-2 prose-headings:text-white prose-a:text-yellow-400">
-                         <ReactMarkdown>{content || "*Commencez à écrire pour voir l'aperçu...*"}</ReactMarkdown>
+                         <MarkdownRenderer>{content || "*Commencez à écrire pour voir l'aperçu...*"}</MarkdownRenderer>
                     </div>
                 </div>
             </div>

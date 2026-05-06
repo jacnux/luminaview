@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
+import MarkdownRenderer from '../../components/MarkdownRenderer';
 import { getBlogSlug } from '../../utils/getBlogSlug';
 import { API_PREFIX } from '../../utils/blogApi';
 
@@ -26,7 +26,7 @@ const AboutPage: React.FC = () => {
       )}
       <h2>{profile.name}</h2>
       <div className="prose max-w-2xl mx-auto text-left">
-        <ReactMarkdown>{profile.bio || 'Aucune bio.'}</ReactMarkdown>
+        <MarkdownRenderer className="prose">{profile.bio || 'Aucune bio.'}</MarkdownRenderer>
       </div>
       <Link to={`/${location.search}`} className="btn btn-ghost mt-4">← Retour</Link>
     </div>

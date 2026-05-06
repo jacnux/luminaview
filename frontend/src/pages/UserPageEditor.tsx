@@ -65,38 +65,6 @@ const UserPageEditor = () => {
     fetchAlbums();
   }, []);
 
-  // 3. Charger les photos pour l'image de couverture
-  /*useEffect(() => {
-    const fetchCoverPhotos = async () => {
-      // On cherche la première section qui a un album sélectionné
-      const sectionWithAlbum = sections.find(s =>
-        (s.type === 'gallery' || s.type === 'split_text_gallery') &&
-        s.albumIds && s.albumIds.length > 0
-      );
-
-      if (sectionWithAlbum) {
-        const albumId = sectionWithAlbum.albumIds[0];
-        try {
-          // CORRECTION ICI : On appelle /photos/:id
-          const res = await api.get(`/albums/photos/${albumId}`);
-
-          // La route renvoie directement un tableau de photos
-          if (res.data && res.data.length > 0) {
-            setCoverPhotos(res.data);
-          } else {
-            setCoverPhotos([]);
-          }
-        } catch (err) {
-          console.error("Impossible de charger les photos pour la couverture", err);
-          setCoverPhotos([]);
-        }
-      } else {
-        setCoverPhotos([]);
-      }
-    };
-
-    fetchCoverPhotos();
-  }, [sections]);  */
 
   // 3. Charger les photos pour l'image de couverture
 // On utilise une ref pour comparer l'ID précédent et éviter les boucles

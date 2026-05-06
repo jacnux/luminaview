@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../utils/api';
 import Lightbox from '../components/Lightbox';
-import ReactMarkdown from 'react-markdown'; // <--- 1. IMPORT AJOUTÉ
+import MarkdownRenderer from '../components/MarkdownRenderer'; // <--- 1. IMPORT AJOUTÉ
 
 const UserPageView = () => {
   const { username, slug } = useParams<{ username: string; slug: string }>();
@@ -87,17 +87,33 @@ const UserPageView = () => {
             if (!section) return null;
 
             // --- 1. BLOC TEXTE SIMPLE (MARKDOWN ACTIVÉ) ---
-            if (section.type === 'text') {
+          {/*   if (section.type === 'text') {
               return (
                 <div key={index} className="mb-12 max-w-none">
-                  <div className="prose prose-invert prose-lg bg-gray-800/30 p-6 rounded-xl border border-gray-700">
-                    {/* On utilise ReactMarkdown ici */}
-                    <ReactMarkdown>{section.content || ''}</ReactMarkdown>
+                  <div className="prose prose-invert prose-lg text-white-500 bg-gray-800/30 p-6 rounded-xl border border-gray-700">
+                
+                    <MarkdownRenderer className="prose">{section.content || ''}</MarkdownRenderer>
                   </div>
                 </div>
               );
-            }
+            }  */}
 
+            if (section.type === 'text') {
+                  return (
+                    <div key={index} className="mb-12 max-w-none">
+                      <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700">
+                        <MarkdownRenderer className="prose prose-invert prose-lg max-w-none
+                          prose-headings:text-white
+                          prose-p:text-white
+                          prose-li:text-white
+                          prose-strong:text-white
+                          prose-a:text-yellow-400 hover:prose-a:text-yellow-300">
+                          {section.content || ''}
+                        </MarkdownRenderer>
+                      </div>
+                    </div>
+                  );
+                }
             // --- 2. BLOC GALERIE SIMPLE ---
             if (section.type === 'gallery') {
                if (!section.albumIds || section.albumIds.length === 0) return null;
@@ -134,7 +150,7 @@ const UserPageView = () => {
                   {/* Colonne Texte (Markdown activé) */}
                   <div className="w-full md:w-[30%] bg-gray-800/50 p-6 rounded self-stretch overflow-hidden">
                      <div className="prose prose-invert prose-sm max-w-none">
-                        <ReactMarkdown>{section.content || ''}</ReactMarkdown>
+                        <MarkdownRenderer className="prose">{section.content || ''}</MarkdownRenderer>
                      </div>
                   </div>
 

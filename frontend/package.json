@@ -5,23 +5,23 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.10.0",
+    "react-router-dom": "^6.16.0",
     "axios": "^1.4.0",
     "framer-motion": "^10.12.0",
     "react-scripts": "5.0.1",
-    "tailwindcss": "^3.x.x",
-    "postcss": "^8.x.x",
-    "autoprefixer": "^10.x.x"
+    "react-markdown": "^9.0.1",
+    "rehype-raw": "^7.0.0",
+    "rehype-sanitize": "^6.0.0",
+    "remark-gfm": "^4.0.0"
   },
   "devDependencies": {
-   "@tailwindcss/typography": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.10",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
-    "@types/react-router-dom": "^5.3.3",
-    "react-router-dom": "^6.16.0",
-    "react-markdown": "^9.0.1",
-    "@types/node": "^16.18.0",
-    "remark-gfm": "^4.0.0"
+    "@types/node": "^16.18.0"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -30,20 +30,10 @@
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
-    "extends": [
-      "react-app"
-    ]
+    "extends": ["react-app"]
   },
   "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
   }
 }

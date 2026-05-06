@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useLocation } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
+import MarkdownRenderer from '../../components/MarkdownRenderer';  // ← une seule fois
 import { API_PREFIX } from '../../utils/blogApi';
 
 const PostDetail: React.FC = () => {
@@ -25,7 +25,7 @@ const PostDetail: React.FC = () => {
       <Link to={`/${location.search}`} className="btn btn-ghost mb-4">&larr; Retour</Link>
       <article className="card">
         <h1 className="card-title">{post.title}</h1>
-        <div className="prose"><ReactMarkdown>{post.content}</ReactMarkdown></div>
+        <MarkdownRenderer className="prose">{post.content}</MarkdownRenderer>
       </article>
     </div>
   );

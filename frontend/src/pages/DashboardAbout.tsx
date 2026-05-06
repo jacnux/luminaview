@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 import remarkGfm from 'remark-gfm';
 
 const DashboardAbout: React.FC = () => {
@@ -31,7 +31,7 @@ const DashboardAbout: React.FC = () => {
        <div className="relative z-10 min-h-screen pb-20">
           <div className="max-w-4xl mx-auto px-2 sm:px-4 py-8">
             <article className="prose prose-invert prose-yellow max-w-none">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+              <MarkdownRenderer>{content}</MarkdownRenderer>
             </article>
           </div>
        </div>
