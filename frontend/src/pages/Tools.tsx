@@ -6,9 +6,13 @@ import api from '../utils/api';
 const Tools = () => {
   const [albums, setAlbums] = useState<any[]>([]);
   const [photos, setPhotos] = useState<any[]>([]);
-  const [selectedPhoto, setSelectedPhoto] = useState<string>('');
-  const [targetAlbum, setTargetAlbum] = useState<string>('');
+  const [selectedPhoto, setSelectedPhoto] = useState('');
+  const [targetAlbum, setTargetAlbum] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // ← NOUVEAU : états pour le filtrage
+  const [searchText, setSearchText] = useState('');
+  const [filterAlbum, setFilterAlbum] = useState('');
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -24,7 +28,6 @@ const Tools = () => {
         api.get('/albums/my/albums'),
         api.get('/photos/my/photos')
       ]);
-      // On garde les albums classiques pour la sélection de destination
       setAlbums(albumsRes.data.filter((a: any) => !a.isVirtual));
       setPhotos(photosRes.data);
     } catch (error) { console.error(error); }
@@ -40,99 +43,134 @@ const Tools = () => {
       setMessage({ type: 'success', text: 'Photo déplacée avec succès !' });
       setSelectedPhoto('');
       fetchData();
-    } catch (error) { setMessage({ type: 'error', text: 'Erreur lors du déplacement.' }); }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erreur lors du déplacement.' });
+    }
   };
 
-  // Trouver les détails de la photo sélectionnée pour l'aperçu
+  // ← NOUVEAU : photos filtrées + triées alphabétiquement
+  const filteredPhotos = photos
+    .filter(p => {
+      const matchText = searchText === '' ||
+        p.title?.toLowerCase().startsWith(searchText.toLowerCase());
+      const matchAlbum = filterAlbum === '' || p.albumId === filterAlbum;
+      return matchText && matchAlbum;
+    })
+    .sort((a, b) => (a.title || '').localeCompare(b.title || '', 'fr', { sensitivity: 'base' }));
+
+  // ← NOUVEAU : grouper par lettre pour l'affichage
+  const grouped = filteredPhotos.reduce((acc: Record<string, any[]>, photo) => {
+    const letter = (photo.title?.[0] || '#').toUpperCase();
+    if (!acc[letter]) acc[letter] = [];
+    acc[letter].push(photo);
+    return acc;
+  }, {});
+
   const selectedPhotoData = photos.find(p => p._id === selectedPhoto);
 
   return (
-    <div className="relative min-h-screen w-full">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
-      <div className="relative z-10 p-4 sm:p-8">
-        <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gray-900 text-white p-6">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-bold">Outils & Maintenance</h1>
+        <Link to="/dashboard" className="text-gray-400 hover:text-white">← Retour Dashboard</Link>
+      </div>
 
-          {/* Header */}
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-white">Outils & Maintenance</h1>
-            <div className="flex gap-4 items-center">
-                <Link to="/dashboard" className="text-sm bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full transition">
-                    ← Retour Dashboard
-                </Link>
-            </div>
+      <div className="bg-gray-800/50 rounded-xl p-6 border border-white/10">
+        <h2 className="text-lg font-semibold mb-4">Déplacer une photo</h2>
+
+        {message && (
+          <div className={`p-3 rounded-lg mb-4 ${message.type === 'success' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
+            {message.text}
           </div>
+        )}
 
-          {/* Carte Outil */}
-          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl p-6 mb-8">
-            <h2 className="text-xl font-bold text-white mb-4">Déplacer une photo</h2>
-
-            {message && (
-              <div className={`p-3 rounded mb-4 ${message.type === 'success' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
-                {message.text}
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-              {/* Sélection Photo */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">1. Sélectionner la photo</label>
-                <select
-                  value={selectedPhoto}
-                  onChange={(e) => setSelectedPhoto(e.target.value)}
-                  className="w-full bg-black/30 border border-white/20 text-white p-3 rounded-lg"
-                >
-                  <option value="">-- Choisir une photo --</option>
-                  {photos.map(p => {
-                    // CORRECTION : On retrouve le nom de l'album parent
-                    const parentAlbum = albums.find(a => a._id === p.albumId);
-                    return (
-                      <option key={p._id} value={p._id}>
-                        {p.title} (Album: {parentAlbum?.title || 'Inconnu'})
-                      </option>
-                    );
-                  })}
-                </select>
-
-                {/* Aperçu */}
-                {selectedPhotoData && (
-                  <div className="mt-4 flex items-center gap-4 bg-black/20 p-2 rounded-lg">
-                    <img src={`/uploads/${selectedPhotoData.filename}`} className="w-16 h-16 object-cover rounded" alt="Aperçu" />
-                    <div>
-                        <p className="text-white font-medium">{selectedPhotoData.title}</p>
-                        <p className="text-xs text-gray-400">{selectedPhotoData.tags?.join(', ')}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Sélection Album Cible */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">2. Album de destination</label>
-                <select
-                  value={targetAlbum}
-                  onChange={(e) => setTargetAlbum(e.target.value)}
-                  className="w-full bg-black/30 border border-white/20 text-white p-3 rounded-lg"
-                >
-                  <option value="">-- Choisir un album --</option>
-                  {albums.map(a => (
-                    <option key={a._id} value={a._id}>{a.title}</option>
-                  ))}
-                </select>
-
-                <button
-                  onClick={handleMove}
-                  disabled={!selectedPhoto || !targetAlbum}
-                  className="w-full mt-4 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-full font-bold transition"
-                >
-                  Déplacer la photo
-                </button>
-              </div>
-
-            </div>
-          </div>
-
+        {/* NOUVEAU : Filtres */}
+        <div className="flex gap-3 mb-4">
+          {/* Recherche par titre */}
+          <input
+            type="text"
+            placeholder="Rechercher par titre (ex: Po...)"
+            value={searchText}
+            onChange={e => { setSearchText(e.target.value); setSelectedPhoto(''); }}
+            className="flex-1 bg-black/30 border border-white/20 text-white p-3 rounded-lg placeholder-gray-500"
+          />
+          {/* Filtre par album */}
+          <select
+            value={filterAlbum}
+            onChange={e => { setFilterAlbum(e.target.value); setSelectedPhoto(''); }}
+            className="flex-1 bg-black/30 border border-white/20 text-white p-3 rounded-lg"
+          >
+            <option value="">— Tous les albums —</option>
+            {albums.map(a => (
+              <option key={a._id} value={a._id}>{a.title}</option>
+            ))}
+          </select>
         </div>
+
+        {/* Compteur résultats */}
+        <p className="text-gray-400 text-sm mb-3">
+          {filteredPhotos.length} photo{filteredPhotos.length > 1 ? 's' : ''} trouvée{filteredPhotos.length > 1 ? 's' : ''}
+        </p>
+
+        {/* Sélecteur groupé par lettre */}
+        <label className="block text-sm text-gray-400 mb-1">1. Sélectionner la photo</label>
+        <select
+          value={selectedPhoto}
+          onChange={e => setSelectedPhoto(e.target.value)}
+          className="w-full bg-black/30 border border-white/20 text-white p-3 rounded-lg mb-4"
+          size={8}
+        >
+          <option value="">-- Choisir une photo --</option>
+          {Object.keys(grouped).sort().map(letter => (
+            <optgroup key={letter} label={`— ${letter} —`}>
+              {grouped[letter].map(p => {
+                const parentAlbum = albums.find(a => a._id === p.albumId);
+                return (
+                  <option key={p._id} value={p._id}>
+                    {p.title} ({parentAlbum?.title || 'Inconnu'})
+                  </option>
+                );
+              })}
+            </optgroup>
+          ))}
+        </select>
+
+        {/* Aperçu */}
+        {selectedPhotoData && (
+          <div className="flex items-center gap-4 bg-black/20 p-3 rounded-lg mb-4">
+            <img
+              src={`/uploads/${selectedPhotoData.filename}`}
+              className="w-16 h-16 object-cover rounded"
+              alt={selectedPhotoData.title}
+            />
+            <div>
+              <p className="font-medium">{selectedPhotoData.title}</p>
+              <p className="text-gray-400 text-sm">{selectedPhotoData.tags?.join(', ')}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Album de destination */}
+        <label className="block text-sm text-gray-400 mb-1">2. Album de destination</label>
+        <select
+          value={targetAlbum}
+          onChange={e => setTargetAlbum(e.target.value)}
+          className="w-full bg-black/30 border border-white/20 text-white p-3 rounded-lg mb-4"
+        >
+          <option value="">-- Choisir un album --</option>
+          {albums.map(a => (
+            <option key={a._id} value={a._id}>{a.title}</option>
+          ))}
+        </select>
+
+        <button
+          onClick={handleMove}
+          disabled={!selectedPhoto || !targetAlbum}
+          className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition"
+        >
+          Déplacer la photo
+        </button>
       </div>
     </div>
   );

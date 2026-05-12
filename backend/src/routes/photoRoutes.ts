@@ -8,6 +8,10 @@ import Photo from '../models/Photo';
 import Album from '../models/Album';
 import User from '../models/User';
 import { authenticateToken } from '../middleware/auth';
+import exifr from 'exifr';
+
+
+
 
 const router = express.Router();
 
@@ -41,6 +45,7 @@ const uploadMulter = multer({
 // --- ROUTES ---
 
 // 1. UPLOAD PHOTOS
+
 router.post('/', authenticateToken, uploadMulter.array('photos'), async (req: Request, res: Response) => {
   try {
     const { albumId, metadata } = req.body;
@@ -60,7 +65,7 @@ router.post('/', authenticateToken, uploadMulter.array('photos'), async (req: Re
 
     if (user.quotaUsed + totalUploadSize > user.quotaLimit) {
       files.forEach(f => { try { fs.unlinkSync(path.join(__dirname, '../../uploads', f.filename)); } catch (e) {} });
-      return res.status(403).json({ error: `Espace insuffisant.` });
+      return res.status(403).json({ error: 'Espace insuffisant.' });
     }
 
     let coverFilename: string | null = null;
@@ -71,66 +76,110 @@ router.post('/', authenticateToken, uploadMulter.array('photos'), async (req: Re
       const inputPath = path.join(__dirname, '../../uploads', file.filename);
       const outputPath = path.join(__dirname, '../../uploads', 'tmp-' + file.filename);
 
+
+
+
+    // ✅ 1. LIRE LES MÉTADONNÉES EN PREMIER, avant que sharp modifie le fichier
+    /*let exifKeywords: string[] = [];
+    let exifTitle = '';
+    let exifDescription = '';
+    try {
+              const tags = await exiftool.read(inputPath);
+              console.log('EXIFTOOL Keywords:', tags.Keywords);
+              console.log('EXIFTOOL Subject:', tags.Subject);
+
+              const raw = tags.Keywords || tags.Subject || [];
+              const keywordsRaw = Array.isArray(raw) ? raw : [raw];
+              exifKeywords = keywordsRaw
+                .map((k: string) => k.trim().toLowerCase())
+                .filter((k: string) => k);
+
+              exifTitle = (tags.Title as string) || (tags.ObjectName as string) || '';
+              exifDescription = (tags.Caption as string) || (tags.Description as string) || '';
+
+      } catch (e) {
+              console.error('Erreur lecture exiftool:', e); // ← logger l'erreur pour déboguer
+      }
+        */
+
+
+    // Dans le map :
+    let exifKeywords: string[] = [];
+    let exifTitle = '';
+    let exifDescription = '';
+    try {
+      const exif = await exifr.parse(inputPath, {
+        iptc: true,
+        xmp: true,
+        tiff: false,
+        icc: false,
+      });
+    //  console.log('EXIFR complet:', JSON.stringify(exif, null, 2));
+
+      if (exif) {
+        const raw = exif.Keywords || exif.Subject || [];
+        const keywordsRaw = Array.isArray(raw) ? raw : [raw];
+        exifKeywords = keywordsRaw
+          .map((k: string) => k.trim().toLowerCase())
+          .filter((k: string) => k);
+        exifTitle = exif.ObjectName || exif.Title || '';
+        exifDescription = exif.Caption || exif.Description || '';
+      }
+    } catch (e) {
+      console.error('Erreur lecture EXIF:', e);
+    }
+
+
+
       // --- LOGIQUE SHARP ---
-
-      // 1. Charger l'image
       const image = sharp(inputPath);
-      const metadata = await image.metadata();
+      const sharpMeta = await image.metadata();
 
-      // 2. Calculer dimensions cibles
-      let targetWidth = metadata.width || 1920;
-      let targetHeight = metadata.height || 1080;
+      let targetWidth = sharpMeta.width || 1920;
+      let targetHeight = sharpMeta.height || 1080;
       if (targetWidth > 1920) {
         const ratio = 1920 / targetWidth;
         targetWidth = 1920;
-        targetHeight = Math.round((metadata.height || 1080) * ratio);
+        targetHeight = Math.round((sharpMeta.height || 1080) * ratio);
       }
 
-      // 3. Préparer le resize
       let sharpChain = image.resize(1920, null, { fit: 'inside', withoutEnlargement: true });
 
-      // 4. Filigrane
       if (data.applyWatermark) {
         const textToPrint = data.watermarkText || "© Hélioscope";
         const svgWidth = 300;
         const svgHeight = 50;
         const padding = 20;
-
         const leftPos = Math.max(0, targetWidth - svgWidth - padding);
         const topPos = Math.max(0, targetHeight - svgHeight - padding);
-
         const svgText = `
           <svg width="${svgWidth}" height="${svgHeight}">
             <rect width="100%" height="100%" fill="rgba(0,0,0,0.6)" rx="5" ry="5"/>
             <style>.title { fill: #ffffff; font-size: 20px; font-weight: bold; font-family: 'DejaVu Sans', sans-serif; }</style>
             <text x="50%" y="50%" class="title" text-anchor="middle" dominant-baseline="middle">${textToPrint}</text>
-          </svg>
-        `;
-
-        const svgBuffer = Buffer.from(svgText);
-        sharpChain = sharpChain.composite([{
-          input: svgBuffer,
-          top: topPos,
-          left: leftPos
-        }]);
+          </svg>`;
+        sharpChain = sharpChain.composite([{ input: Buffer.from(svgText), top: topPos, left: leftPos }]);
       }
 
       await sharpChain.jpeg({ quality: 85 }).toFile(outputPath);
       fs.renameSync(outputPath, inputPath);
-      // ----------------------------
 
       if (data.isCover) coverFilename = file.filename;
-    //  const tagsArray = data.tag ? data.tag.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [];
-      const tagsArray = data.tag
-              ? data.tag.split(',').map((t: string) => t.trim().toLowerCase()).filter((t: string) => t)
-              : [];
+
+      // ✅ Fusion tags manuels + tags Lightroom
+      const manualTags = data.tag
+        ? data.tag.split(',').map((t: string) => t.trim().toLowerCase()).filter((t: string) => t)
+        : [];
+      const tagsArray = [...new Set([...manualTags, ...exifKeywords])];
+
       return {
         albumId,
         userId: req.user.userId,
         filename: file.filename,
         index: data.index || 0,
-        title: data.title || file.originalname,
-        description: data.description || '',
+        // ✅ Priorité : données manuelles > métadonnées Lightroom > nom du fichier
+        title: data.title || exifTitle || file.originalname,
+        description: data.description || exifDescription || '',
         tags: tagsArray,
         size: file.size
       };
