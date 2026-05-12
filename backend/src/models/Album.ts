@@ -1,7 +1,24 @@
 // backend/src/models/Album.ts
 import mongoose from 'mongoose';
 
-const AlbumSchema = new mongoose.Schema({
+export interface IAlbum extends Document {
+  userId: mongoose.Types.ObjectId;
+  title: string;
+  description?: string;
+  isPublic: boolean;
+  isFeatured: boolean;
+  coverImage?: string;
+  isVirtual: boolean;
+  virtualFilter?: 'tag' | 'date' | null;
+  filterValue?: string | null;
+  startDate?: Date | null;
+  endDate?: Date | null;
+  sortOrder: 'date_desc' | 'date_asc' | 'manual';
+  tags?: string[];
+  createdAt: Date;
+}
+
+const AlbumSchema = new mongoose.Schema<IAlbum>({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   title: { type: String, required: true },
   description: String,
@@ -22,6 +39,9 @@ const AlbumSchema = new mongoose.Schema({
   startDate: { type: Date, default: null },
   endDate: { type: Date, default: null },
 
+  // --- NOUVEAU : Tags pour les albums virtuels ---
+  tags: [{ type: String }],
+
   createdAt: { type: Date, default: Date.now },
 
   // Options de tri
@@ -32,4 +52,4 @@ const AlbumSchema = new mongoose.Schema({
 { timestamps: true });
 
 
-export default mongoose.model('Album', AlbumSchema);
+export default mongoose.model<IAlbum>('Album', AlbumSchema);

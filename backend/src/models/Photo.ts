@@ -8,6 +8,7 @@ export interface IPhoto extends Document {
   title: string;
   description: string;
   tags: string[];
+  size?: number;
   createdAt: Date;
 }
 
