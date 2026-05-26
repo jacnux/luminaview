@@ -1,4 +1,4 @@
-# Manuel Utilisateur (Version 2.3)
+# Manuel Utilisateur (Version 2.4)
 
 Bienvenue sur Hélioscope. Ce guide vous accompagne dans la prise en main de votre espace.
 

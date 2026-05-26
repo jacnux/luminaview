@@ -2,10 +2,10 @@
 // luminaview
 //         UserPageEditor
 //
-//     Mai 2026 v2.3.2
+//     Mai 2026 v2.4.1
 // ===========================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../utils/api';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -21,6 +21,7 @@ const UserPageEditor = () => {
   const [coverImage, setCoverImage] = useState('');
   const [coverPhotos, setCoverPhotos] = useState<any[]>([]);
   const [availableAlbums, setAvailableAlbums] = useState<any[]>([]);
+  const [albumSortAZ, setAlbumSortAZ] = useState<'az' | 'za'>('az');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -77,7 +78,6 @@ const UserPageEditor = () => {
           s.albumIds.length > 0,
       );
       const currentAlbumId = sectionWithAlbum ? sectionWithAlbum.albumIds[0] : null;
-
       if (currentAlbumId && currentAlbumId !== prevAlbumIdRef.current) {
         try {
           const res = await api.get(`/albums/photos/${currentAlbumId}`);
@@ -91,6 +91,14 @@ const UserPageEditor = () => {
     };
     fetchCoverPhotos();
   }, [sections]);
+
+  // Albums triés alphabétiquement (toggle A→Z / Z→A)
+  const sortedAlbums = useMemo(() => {
+    const copy = [...availableAlbums];
+    return albumSortAZ === 'az'
+      ? copy.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'fr', { sensitivity: 'base' }))
+      : copy.sort((a, b) => (b.title || '').localeCompare(a.title || '', 'fr', { sensitivity: 'base' }));
+  }, [availableAlbums, albumSortAZ]);
 
   // Gestion sections
   const addSection = (type: 'text' | 'gallery' | 'split_text_gallery') => {
@@ -145,6 +153,20 @@ const UserPageEditor = () => {
     }
   };
 
+  // Bouton toggle tri albums (partagé entre toutes les sections)
+  const sortToggleBtn = (
+    <div className="flex justify-end mb-1">
+      <button
+        type="button"
+        onClick={() => setAlbumSortAZ(v => (v === 'az' ? 'za' : 'az'))}
+        className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded transition"
+        title={albumSortAZ === 'az' ? 'Basculer Z→A' : 'Basculer A→Z'}
+      >
+        {albumSortAZ === 'az' ? '🔤 A→Z' : '🔤 Z→A'}
+      </button>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
       <div className="max-w-4xl mx-auto">
@@ -174,9 +196,7 @@ const UserPageEditor = () => {
             <input
               type="text"
               value={slug}
-              onChange={e =>
-                setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))
-              }
+              onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
               className="w-full p-3 bg-gray-700 rounded"
               placeholder="mes-tarifs"
             />
@@ -220,8 +240,7 @@ const UserPageEditor = () => {
               </div>
             ) : (
               <p className="text-gray-500 text-sm italic">
-                Ajoutez une section "Galerie" et sélectionnez un album pour pouvoir choisir une
-                image.
+                Ajoutez une section "Galerie" et sélectionnez un album pour pouvoir choisir une image.
               </p>
             )}
           </div>
@@ -287,18 +306,19 @@ const UserPageEditor = () => {
             )}
 
             {section.type === 'gallery' && (
-              <select
-                className="w-full bg-gray-700 p-3 rounded"
-                onChange={e => updateSectionContent(index, 'albumIds', e.target.value)}
-                value={section.albumIds[0] || ''}
-              >
-                <option value="">-- Choisir un album --</option>
-                {availableAlbums.map(alb => (
-                  <option key={alb._id} value={alb._id}>
-                    {alb.title}
-                  </option>
-                ))}
-              </select>
+              <div className="flex flex-col gap-1">
+                {sortToggleBtn}
+                <select
+                  className="w-full bg-gray-700 p-3 rounded"
+                  onChange={e => updateSectionContent(index, 'albumIds', e.target.value)}
+                  value={section.albumIds[0] || ''}
+                >
+                  <option value="">-- Choisir un album --</option>
+                  {sortedAlbums.map(alb => (
+                    <option key={alb._id} value={alb._id}>{alb.title}</option>
+                  ))}
+                </select>
+              </div>
             )}
 
             {section.type === 'split_text_gallery' && (
@@ -311,16 +331,15 @@ const UserPageEditor = () => {
                   />
                 </div>
                 <div className="w-full md:w-[70%]">
+                  {sortToggleBtn}
                   <select
                     className="w-full bg-gray-700 p-3 rounded mt-1"
                     onChange={e => updateSectionContent(index, 'albumIds', e.target.value)}
                     value={section.albumIds[0] || ''}
                   >
                     <option value="">-- Sélectionner --</option>
-                    {availableAlbums.map(alb => (
-                      <option key={alb._id} value={alb._id}>
-                        {alb.title}
-                      </option>
+                    {sortedAlbums.map(alb => (
+                      <option key={alb._id} value={alb._id}>{alb.title}</option>
                     ))}
                   </select>
                 </div>

@@ -1,10 +1,11 @@
 // ============================================================
 // LUMINAVIEW — Dashboard.tsx
 // Gestion des albums / galeries
-// version v2.3.7
+// version v2.3.8
+// tri alphabétique minimal A→Z / Z→A / défaut
 // ============================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -182,7 +183,6 @@ const AlbumCardList = ({
   onShare,
   onToggleFeatured,
 }: any) => (
-  // Fix typo: hover:bg:white/10 → hover:bg-white/10
   <div className="bg-white/5 dark:bg-gray-800/40 backdrop-blur border border-white/10 dark:border-gray-700 rounded-xl p-4 flex items-center gap-4 hover:bg-white/10 transition group">
     <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-black/20">
       {album.coverImage ? (
@@ -237,9 +237,7 @@ const AlbumCardList = ({
       )}
       <button
         onClick={() => onToggleFeatured(album._id, album.isFeatured)}
-        title={
-          album.isFeatured ? 'Retirer du portfolio' : 'Mettre en avant'
-        }
+        title={album.isFeatured ? 'Retirer du portfolio' : 'Mettre en avant'}
         className={`text-xs font-bold uppercase transition ${
           album.isFeatured ? 'text-yellow-400' : 'text-gray-500'
         }`}
@@ -330,6 +328,7 @@ const Dashboard = () => {
   const [editingAlbum, setEditingAlbum] = useState<any | null>(null);
   const [sharingAlbum, setSharingAlbum] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [sortAZ, setSortAZ] = useState<'az' | 'za' | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -348,7 +347,6 @@ const Dashboard = () => {
     fetchAlbums();
   }, [user, loading, navigate, isGalleries]);
 
-  // Auto-effacement des messages de feedback après 6 secondes
   useEffect(() => {
     if (!feedbackMessage && !errorMessage) return;
     const timer = setTimeout(() => {
@@ -389,7 +387,6 @@ const Dashboard = () => {
       const res = await api.delete<DeleteAlbumResponse>(`/albums/${album._id}`);
       const data = res.data;
 
-      // On retire l'album de la liste locale uniquement en cas de succès
       setAlbums(prev => prev.filter(a => a._id !== album._id));
 
       if (album?.isVirtual) {
@@ -406,11 +403,9 @@ const Dashboard = () => {
       if (editingAlbum?._id === album._id) setEditingAlbum(null);
       if (sharingAlbum?._id === album._id) setSharingAlbum(null);
     } catch (error: any) {
-      // ── Blocage 409 : album utilisé dans une page ──────────────────
       const apiMessage = error?.response?.data?.error;
       setErrorMessage(apiMessage || 'Erreur lors de la suppression.');
       setFeedbackMessage(null);
-      // L'album reste dans la liste — on ne le retire pas de l'UI
     }
   };
 
@@ -439,6 +434,14 @@ const Dashboard = () => {
   const filteredAlbums = albums.filter(a =>
     isGalleries ? a.isVirtual === true : a.isVirtual !== true
   );
+
+  const sortedAlbums = useMemo(() => {
+    if (!sortAZ) return filteredAlbums;
+    const copy = [...filteredAlbums];
+    return sortAZ === 'az'
+      ? copy.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'fr', { sensitivity: 'base' }))
+      : copy.sort((a, b) => (b.title || '').localeCompare(a.title || '', 'fr', { sensitivity: 'base' }));
+  }, [filteredAlbums, sortAZ]);
 
   const albumActions = {
     onEdit: setEditingAlbum,
@@ -505,6 +508,16 @@ const Dashboard = () => {
               >
                 <IconList />
               </button>
+              <button
+                type="button"
+                onClick={() => setSortAZ(v => (v === null ? 'az' : v === 'az' ? 'za' : null))}
+                title={sortAZ === 'az' ? 'Basculer Z→A' : sortAZ === 'za' ? 'Retour ordre actuel' : 'Trier A→Z'}
+                className={`px-3 py-2 rounded-full transition text-sm ${
+                  sortAZ ? 'bg-white/30 text-white' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {sortAZ === 'az' ? 'A→Z' : sortAZ === 'za' ? 'Z→A' : 'A→Z'}
+              </button>
             </div>
           </div>
 
@@ -515,7 +528,7 @@ const Dashboard = () => {
                 : 'space-y-4 mt-8'
             }
           >
-            {filteredAlbums.map(album =>
+            {sortedAlbums.map(album =>
               viewMode === 'grid' ? (
                 <AlbumCardGrid
                   key={album._id}
@@ -532,7 +545,7 @@ const Dashboard = () => {
             )}
           </div>
 
-          {filteredAlbums.length === 0 && (
+          {sortedAlbums.length === 0 && (
             <div
               className={`text-center mt-12 ${
                 theme === 'dark' ? 'text-gray-300' : 'text-gray-700'

@@ -1,8 +1,13 @@
-// src/pages/CommentsPage.tsx
-import React, { useState, useEffect } from 'react';
+// ===============================
+// LuminaView - Mai 2026
+// version 2.4.1
+// CommentsPage.tsx
+// suite propre : tri uniquement, aucun changement de design
+// ===============================
+
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../utils/api';
 
-// ── Types ────────────────────────────────────────────────────────
 interface Comment {
   _id: string;
   authorName: string;
@@ -20,17 +25,15 @@ interface PhotoGroup {
   comments: Comment[];
 }
 
-// ── Regroupement par photo ───────────────────────────────────────
 const groupByPhoto = (comments: Comment[]): PhotoGroup[] => {
   const map = new Map<string, PhotoGroup>();
   for (const c of comments) {
-    const key   = c.photoId?._id || 'deleted';
-    const title = c.photoId?.title    || 'Photo supprimée';
+    const key = c.photoId?._id || 'deleted';
+    const title = c.photoId?.title || 'Photo supprimée';
     const filename = c.photoId?.filename || '';
     if (!map.has(key)) map.set(key, { photoId: key, title, filename, comments: [] });
     map.get(key)!.comments.push(c);
   }
-  // Tri : groupes avec non-lus en premier
   return Array.from(map.values()).sort((a, b) => {
     const aUnread = a.comments.filter(c => !c.isRead).length;
     const bUnread = b.comments.filter(c => !c.isRead).length;
@@ -38,13 +41,12 @@ const groupByPhoto = (comments: Comment[]): PhotoGroup[] => {
   });
 };
 
-// ── Modale de réponse ────────────────────────────────────────────
 const ReplyModal = ({
   comment, onClose, onSent
 }: { comment: Comment; onClose: () => void; onSent: (id: string) => void }) => {
-  const [text, setText]       = useState('');
+  const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
-  const [error, setError]     = useState('');
+  const [error, setError] = useState('');
 
   const send = async () => {
     if (!text.trim()) return;
@@ -69,7 +71,6 @@ const ReplyModal = ({
           <button onClick={onClose} className="text-gray-400 hover:text-white text-xl">✕</button>
         </div>
 
-        {/* Citation du commentaire original */}
         <div className="bg-black/30 border-l-4 border-blue-500/60 p-3 rounded-lg mb-4 text-sm text-gray-300 italic">
           "{comment.message}"
         </div>
@@ -104,10 +105,10 @@ const ReplyModal = ({
   );
 };
 
-// ── Composant principal ──────────────────────────────────────────
 const CommentsPage = () => {
-  const [comments, setComments]         = useState<Comment[]>([]);
-  const [replyTarget, setReplyTarget]   = useState<Comment | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [replyTarget, setReplyTarget] = useState<Comment | null>(null);
+  const [sortAZ, setSortAZ] = useState<'az' | 'za' | null>(null);
 
   useEffect(() => {
     api.get('/comments/my').then(r => setComments(r.data));
@@ -125,25 +126,40 @@ const CommentsPage = () => {
   };
 
   const handleReplySent = (id: string) => {
-    // Marquer comme lu côté frontend après réponse
     setComments(prev => prev.map(c => c._id === id ? { ...c, isRead: true } : c));
   };
 
-  const unread  = comments.filter(c => !c.isRead).length;
-  const groups  = groupByPhoto(comments);
+  const unread = comments.filter(c => !c.isRead).length;
+  const defaultGroups = groupByPhoto(comments);
+  const groups = useMemo(() => {
+    const base = [...defaultGroups];
+    if (!sortAZ) return base;
+    return sortAZ === 'az'
+      ? base.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'fr', { sensitivity: 'base' }))
+      : base.sort((a, b) => (b.title || '').localeCompare(a.title || '', 'fr', { sensitivity: 'base' }));
+  }, [defaultGroups, sortAZ]);
 
   return (
     <div className="max-w-3xl mx-auto p-6">
+      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+        <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+          💬 Commentaires reçus
+          {unread > 0 && (
+            <span className="bg-red-500 text-white text-sm px-2.5 py-0.5 rounded-full">
+              {unread} nouveau{unread > 1 ? 'x' : ''}
+            </span>
+          )}
+        </h1>
 
-      {/* En-tête */}
-      <h1 className="text-2xl font-bold mb-6 text-white flex items-center gap-3">
-        💬 Commentaires reçus
-        {unread > 0 && (
-          <span className="bg-red-500 text-white text-sm px-2.5 py-0.5 rounded-full">
-            {unread} nouveau{unread > 1 ? 'x' : ''}
-          </span>
-        )}
-      </h1>
+        <button
+          type="button"
+          onClick={() => setSortAZ(v => (v === null ? 'az' : v === 'az' ? 'za' : null))}
+          className={`px-3 py-2 rounded-full text-sm transition border ${sortAZ ? 'bg-white/15 text-white border-white/20' : 'text-gray-400 hover:text-white border border-white/10'}`}
+          title={sortAZ === 'az' ? 'Basculer Z→A' : sortAZ === 'za' ? 'Retour ordre actuel' : 'Trier A→Z'}
+        >
+          {sortAZ === 'az' ? 'A→Z' : sortAZ === 'za' ? 'Z→A' : 'A→Z'}
+        </button>
+      </div>
 
       {comments.length === 0 && (
         <p className="text-gray-400 bg-gray-800/50 rounded-xl p-8 text-center">
@@ -151,14 +167,11 @@ const CommentsPage = () => {
         </p>
       )}
 
-      {/* Groupes par photo */}
       <div className="space-y-8">
         {groups.map(group => {
           const groupUnread = group.comments.filter(c => !c.isRead).length;
           return (
             <div key={group.photoId} className="rounded-2xl border border-white/10 bg-gray-800/30 overflow-hidden">
-
-              {/* En-tête du groupe — vignette + titre photo */}
               <div className="flex items-center gap-4 p-4 border-b border-white/10 bg-gray-800/50">
                 <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-black/30">
                   {group.filename ? (
@@ -184,12 +197,9 @@ const CommentsPage = () => {
                 </div>
               </div>
 
-              {/* Liste des commentaires de ce groupe */}
               <div className="divide-y divide-white/5">
                 {group.comments.map(c => (
-                  <div key={c._id}
-                    className={`p-4 transition ${!c.isRead ? 'bg-blue-900/10' : ''}`}
-                  >
+                  <div key={c._id} className={`p-4 transition ${!c.isRead ? 'bg-blue-900/10' : ''}`}>
                     <div className="flex justify-between items-start gap-2">
                       <div>
                         <p className="font-semibold text-sm text-white flex items-center gap-2 flex-wrap">
@@ -214,7 +224,6 @@ const CommentsPage = () => {
                         </p>
                       </div>
 
-                      {/* Actions */}
                       <div className="flex gap-3 flex-shrink-0">
                         {c.authorEmail && (
                           <button onClick={() => setReplyTarget(c)}
@@ -235,7 +244,6 @@ const CommentsPage = () => {
                       </div>
                     </div>
 
-                    {/* Message */}
                     <p className="mt-2 text-sm text-gray-200 bg-black/20 p-3 rounded-lg leading-relaxed">
                       {c.message}
                     </p>
@@ -247,7 +255,6 @@ const CommentsPage = () => {
         })}
       </div>
 
-      {/* Modale de réponse */}
       {replyTarget && (
         <ReplyModal
           comment={replyTarget}
