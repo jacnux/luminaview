@@ -1,7 +1,7 @@
 // ============================================================
 // LUMINAVIEW — PortfolioPage.tsx
 // Page publique du portfolio d'un utilisateur
-// v2.5.6 — cartes séries/expos + menu affiné
+// v2.6.1 — home title color aligned / redundant label removed
 // ============================================================
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -26,6 +26,89 @@ const getBlogUrl = (userName: string): string => {
   return host === 'localhost'
     ? `http://localhost:8080/?user=${name}`
     : `https://${name}-blog.helioscope.fr`;
+};
+
+const stripMarkdownAndHtml = (value: string = '') => {
+  const raw = String(value || '');
+  const withoutMd = raw
+    .replace(/[#*_>`~-]/g, ' ')
+    .replace(/\[(.*?)\]\(.*?\)/g, '$1');
+  const withoutHtml = withoutMd.replace(/<[^>]*>/g, ' ');
+  return withoutHtml.replace(/\s+/g, ' ').trim();
+};
+
+const getPageExcerpt = (page: any) => {
+  const textSection = page.sections?.find(
+    (section: any) => section.type === 'text' || section.type === 'split_text_gallery'
+  );
+  const raw = textSection?.content || page.seoDescription || '';
+  const cleaned = stripMarkdownAndHtml(raw);
+  return cleaned.length > 118 ? `${cleaned.slice(0, 118).trim()}…` : cleaned;
+};
+
+const getPageMeta = (page: any) => {
+  const galleryCount = Array.isArray(page.sections)
+    ? page.sections.filter(
+        (section: any) => section.type === 'gallery' || section.type === 'split_text_gallery'
+      ).length
+    : 0;
+
+  if (page.menuGroup === 'exhibitions') {
+    return galleryCount > 0
+      ? `${galleryCount} section${galleryCount > 1 ? 's' : ''} visuelle${galleryCount > 1 ? 's' : ''}`
+      : 'Exposition';
+  }
+
+  return galleryCount > 0
+    ? `${galleryCount} section${galleryCount > 1 ? 's' : ''} visuelle${galleryCount > 1 ? 's' : ''}`
+    : 'Série';
+};
+
+const getPageSecondaryMeta = (page: any) => {
+  if (page.menuGroup === 'exhibitions') return 'Présentation publique';
+  return 'Ensemble éditorial';
+};
+
+const getPageCover = (page: any) => {
+  return page.coverImage || page.heroImage || page.bannerImage || null;
+};
+
+const getPagePlaceholder = (page: any) => {
+  if (page.menuGroup === 'exhibitions') {
+    return {
+      label: 'Exposition',
+      accent: 'text-orange-100',
+      cardBorder: 'border-stone-200/10',
+      filmTone: 'from-stone-900 via-zinc-900 to-black',
+      sheetTone: 'bg-stone-950',
+      frameTone: 'bg-[#111111]',
+      mark: 'Cartel d’exposition',
+      footerTone: 'from-[#120f0d] to-black',
+    };
+  }
+
+  return {
+    label: 'Série',
+    accent: 'text-amber-50',
+    cardBorder: 'border-zinc-200/10',
+    filmTone: 'from-neutral-950 via-zinc-900 to-black',
+    sheetTone: 'bg-neutral-950',
+    frameTone: 'bg-[#101010]',
+    mark: 'Planche-contact',
+    footerTone: 'from-[#0d0d0d] to-black',
+  };
+};
+
+const filterMenuPages = (pages: any[], group: MenuGroup) => {
+  return [...pages]
+    .filter(page => page.menuGroup === group)
+    .filter(page => page.showInMenu === true)
+    .sort((a, b) => {
+      const orderA = a.menuOrder ?? 0;
+      const orderB = b.menuOrder ?? 0;
+      if (orderA !== orderB) return orderA - orderB;
+      return (a.title || '').localeCompare(b.title || '', 'fr', { sensitivity: 'base' });
+    });
 };
 
 const CommentForm = ({ photoId }: { photoId: string }) => {
@@ -142,52 +225,69 @@ const PhotoModal = ({ photo, onClose }: { photo: any; onClose: () => void }) => 
   );
 };
 
-const PortfolioHero = ({ user, authUser }: any) => {
-  const tagline = user.bio ? user.bio.split('.')[0] + '.' : 'Photographe & Créateur Visuel';
+const PortfolioHero = ({ user, authUser, onContact }: any) => {
+  const tagline = user.bio ? stripMarkdownAndHtml(user.bio).split('.')[0] + '.' : 'Photographe & Créateur Visuel';
   const isOwner = authUser && String((authUser as any)?.id) === String(user._id);
 
   return (
-    <div className="relative w-full bg-gray-800 overflow-hidden">
-      <div className="h-64 md:h-80 w-full">
+    <header className="relative w-full bg-black border-b border-white/10 overflow-hidden">
+      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),transparent_38%)]" />
+
+      <div className="relative h-[22rem] md:h-[30rem] w-full overflow-hidden">
         {user.bannerImage ? (
-          <img src={`/uploads/${user.bannerImage}`} className="w-full h-full object-cover opacity-60" alt="Bannière" />
+          <>
+            <img src={`/uploads/${user.bannerImage}`} className="w-full h-full object-cover opacity-58" alt="Bannière" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/20" />
+          </>
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-gray-800 via-gray-900 to-black" />
+          <div className="w-full h-full bg-gradient-to-br from-gray-900 via-[#101010] to-black" />
         )}
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-black/60 backdrop-blur-sm flex items-center px-6 md:px-12">
-        <div className="absolute -bottom-2 left-8 md:left-12">
-          {user.avatar ? (
-            <img
-              src={`/uploads/${user.avatar}`}
-              className="w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-gray-900 shadow-xl object-cover bg-gray-700"
-              alt="Avatar"
-            />
-          ) : (
-            <div className="w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-gray-900 shadow-xl bg-gray-700 flex items-center justify-center text-4xl">
-              👤
+      <div className="relative -mt-14 md:-mt-20 max-w-7xl mx-auto px-4 md:px-6 pb-10">
+        <div className="bg-black/65 backdrop-blur-md border border-white/10 rounded-[1.6rem] shadow-[0_24px_70px_rgba(0,0,0,0.45)] p-5 md:p-8">
+          <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-8">
+            <div className="flex items-end gap-4 md:gap-6 min-w-0 flex-1">
+              <div className="shrink-0">
+                {user.avatar ? (
+                  <img
+                    src={`/uploads/${user.avatar}`}
+                    className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-black shadow-2xl object-cover bg-gray-800"
+                    alt="Avatar"
+                  />
+                ) : (
+                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-black shadow-2xl bg-gray-800 flex items-center justify-center text-4xl">
+                    👤
+                  </div>
+                )}
+              </div>
+
+              <div className="min-w-0 pb-1">
+                <div className="text-[11px] uppercase tracking-[0.3em] text-gray-400 mb-2">Portfolio</div>
+                <h1 className="text-3xl md:text-5xl font-bold text-white tracking-tight leading-tight">
+                  {user.name}
+                </h1>
+                <p className="text-sm md:text-base text-gray-300 mt-2 italic max-w-2xl">
+                  {tagline}
+                </p>
+              </div>
             </div>
-          )}
-        </div>
-        <div className="ml-36 md:ml-44 flex-1 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl md:text-4xl font-extrabold text-white drop-shadow-lg tracking-tight">{user.name}</h1>
-            <p className="text-sm md:text-base text-gray-300 mt-1 italic drop-shadow">{tagline}</p>
+           {/*
+            {!isOwner && (
+              <div className="md:pb-1">
+                <button
+                  type="button"
+                  onClick={onContact}
+                  className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium text-white hover:bg-white/10 transition"
+                >
+                  Contacter
+                </button>
+              </div>
+            )}  */} 
           </div>
-          {/*
-          {!isOwner && (
-            <Link
-              to="/"
-              className="text-xs text-gray-300 hover:text-white bg-white/10 px-3 py-2 rounded-full transition hidden sm:block"
-            >
-              ← Retour au site
-            </Link>
-          )}
-          */}
         </div>
       </div>
-    </div>
+    </header>
   );
 };
 
@@ -200,13 +300,6 @@ interface PortfolioMenuProps {
   exhibitionPages: any[];
 }
 
-const baseMenuButtonClass =
-  'px-5 py-3 text-sm font-bold rounded-t-lg transition outline-none focus-visible:ring-2 focus-visible:ring-yellow-400/70';
-const activeMenuButtonClass =
-  'bg-gray-800 text-yellow-300 border-b-2 border-yellow-300 shadow-[inset_0_-1px_0_rgba(253,224,71,0.35)]';
-const inactiveMenuButtonClass =
-  'text-gray-400 hover:text-white hover:bg-white/5';
-
 const PortfolioMenu = ({
   activeTab,
   setActiveTab,
@@ -218,7 +311,6 @@ const PortfolioMenu = ({
   const [openDropdown, setOpenDropdown] = useState<ActiveTab | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  // clic extérieur
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -230,7 +322,6 @@ const PortfolioMenu = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // fermeture clavier (Esc)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -243,15 +334,21 @@ const PortfolioMenu = ({
   }, []);
 
   const toggleDropdown = (tab: ActiveTab) => {
-    setActiveTab(tab);
     setOpenDropdown(current => (current === tab ? null : tab));
+  };
+
+  const handleParentTabClick = (tab: ActiveTab) => {
+    setActiveTab(tab);
+    setOpenDropdown(null);
   };
 
   const renderDropdown = (pages: any[], group: 'series' | 'exhibitions') => {
     if (pages.length === 0 || openDropdown !== group) return null;
 
+    const dropdownId = `${group}-dropdown-menu`;
+
     return (
-      <div className="absolute left-1/2 top-full z-40 mt-2 w-[min(94vw,28rem)] -translate-x-1/2 rounded-2xl border border-gray-800 bg-gray-900/95 shadow-2xl backdrop-blur overflow-hidden">
+      <div id={dropdownId} className="lv-dropdown-safe">
         <div className="max-h-[26rem] overflow-y-auto divide-y divide-gray-800">
           {pages.map(page => (
             <Link
@@ -268,7 +365,7 @@ const PortfolioMenu = ({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-gray-800 via-gray-850 to-black flex items-center justify-center text-gray-500 text-[10px] uppercase tracking-[0.2em]">
+                  <div className="w-full h-full bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center text-gray-500 text-[10px] uppercase tracking-[0.2em]">
                     {group === 'exhibitions' ? 'Expo' : 'Série'}
                   </div>
                 )}
@@ -290,145 +387,192 @@ const PortfolioMenu = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 border-b border-gray-800 mb-10" ref={menuRef}>
-      <div className="flex justify-center gap-2 md:gap-4 flex-wrap">
-        <button
-          onClick={() => {
-            setActiveTab('home');
-            setOpenDropdown(null);
-          }}
-          className={`${baseMenuButtonClass} ${
-            activeTab === 'home' ? activeMenuButtonClass : inactiveMenuButtonClass
-          }`}
-        >
-          Accueil
-        </button>
-
-        <div className="relative">
+    <div className="max-w-7xl mx-auto px-4 md:px-6 mb-12" ref={menuRef}>
+      <div className="rounded-[1.25rem] border border-white/10 bg-black/35 backdrop-blur-sm px-3 py-3 md:px-4">
+        <div className="flex justify-center gap-2 md:gap-3 flex-wrap">
           <button
-            type="button"
-            onClick={() => toggleDropdown('series')}
-            aria-expanded={openDropdown === 'series'}
-            className={`${baseMenuButtonClass} ${
-              activeTab === 'series' ? activeMenuButtonClass : inactiveMenuButtonClass
-            } flex items-center gap-2`}
+            onClick={() => handleParentTabClick('home')}
+            className={`lv-menu-btn-safe ${activeTab === 'home' ? 'lv-menu-btn-safe-active' : 'lv-menu-btn-safe-inactive'}`}
           >
-            <span>Séries</span>
-            <span
-              className={`text-xs transition-transform duration-200 ${
-                openDropdown === 'series' ? 'rotate-180' : ''
-              }`}
-            >
-              ▾
-            </span>
+            Accueil
           </button>
-          {renderDropdown(seriesPages, 'series')}
-        </div>
 
-        <div className="relative">
+          <div className="relative flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => handleParentTabClick('series')}
+              className={`lv-menu-btn-safe ${activeTab === 'series' ? 'lv-menu-btn-safe-active' : 'lv-menu-btn-safe-inactive'}`}
+            >
+              Séries
+            </button>
+            <button
+              type="button"
+              aria-label="Ouvrir le sous-menu Séries"
+              aria-expanded={openDropdown === 'series'}
+              aria-controls="series-dropdown-menu"
+              onClick={() => toggleDropdown('series')}
+              className={`lv-menu-chevron-safe ${openDropdown === 'series' || activeTab === 'series' ? 'lv-menu-btn-safe-active' : 'lv-menu-btn-safe-inactive'}`}
+            >
+              <span
+                className={`text-xs transition-transform duration-200 ${openDropdown === 'series' ? 'rotate-180' : ''}`}
+              >
+                ▾
+              </span>
+            </button>
+            {renderDropdown(seriesPages, 'series')}
+          </div>
+
+          <div className="relative flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => handleParentTabClick('exhibitions')}
+              className={`lv-menu-btn-safe ${activeTab === 'exhibitions' ? 'lv-menu-btn-safe-active' : 'lv-menu-btn-safe-inactive'}`}
+            >
+              Expositions
+            </button>
+            <button
+              type="button"
+              aria-label="Ouvrir le sous-menu Expositions"
+              aria-expanded={openDropdown === 'exhibitions'}
+              aria-controls="exhibitions-dropdown-menu"
+              onClick={() => toggleDropdown('exhibitions')}
+              className={`lv-menu-chevron-safe ${openDropdown === 'exhibitions' || activeTab === 'exhibitions' ? 'lv-menu-btn-safe-active' : 'lv-menu-btn-safe-inactive'}`}
+            >
+              <span
+                className={`text-xs transition-transform duration-200 ${openDropdown === 'exhibitions' ? 'rotate-180' : ''}`}
+              >
+                ▾
+              </span>
+            </button>
+            {renderDropdown(exhibitionPages, 'exhibitions')}
+          </div>
+
+          <a
+            href={blogUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="lv-menu-btn-safe lv-menu-btn-safe-inactive"
+          >
+            Blog
+          </a>
           <button
-            type="button"
-            onClick={() => toggleDropdown('exhibitions')}
-            aria-expanded={openDropdown === 'exhibitions'}
-            className={`${baseMenuButtonClass} ${
-              activeTab === 'exhibitions' ? activeMenuButtonClass : inactiveMenuButtonClass
-            } flex items-center gap-2`}
+            onClick={() => handleParentTabClick('about')}
+            className={`lv-menu-btn-safe ${activeTab === 'about' ? 'lv-menu-btn-safe-active' : 'lv-menu-btn-safe-inactive'}`}
           >
-            <span>Expositions</span>
-            <span
-              className={`text-xs transition-transform duration-200 ${
-                openDropdown === 'exhibitions' ? 'rotate-180' : ''
-              }`}
-            >
-              ▾
-            </span>
+            À propos
           </button>
-          {renderDropdown(exhibitionPages, 'exhibitions')}
         </div>
-
-        <a
-          href={blogUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`${baseMenuButtonClass} ${inactiveMenuButtonClass}`}
-        >
-          Blog
-        </a>
-        <button
-          onClick={() => {
-            setActiveTab('about');
-            setOpenDropdown(null);
-          }}
-          className={`${baseMenuButtonClass} ${
-            activeTab === 'about' ? activeMenuButtonClass : inactiveMenuButtonClass
-          }`}
-        >
-          À propos
-        </button>
       </div>
     </div>
   );
 };
 
-interface TabProjectsProps {
-  albums: any[];
-  portfolioIntro?: string;
-  username: string;
+interface HomeIntroProps {
   title?: string;
+  portfolioIntro?: string;
+}
+
+const HomeIntro = ({ title, portfolioIntro }: HomeIntroProps) => (
+  <div className="max-w-4xl mx-auto mb-12 md:mb-14">
+    <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] backdrop-blur-sm px-6 py-7 md:px-8 md:py-9 shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
+      {title && (
+        <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-yellow-400 mb-5">
+          {title}
+        </h2>
+      )}
+
+      {portfolioIntro ? (
+        <div className="prose prose-invert max-w-none text-left prose-p:my-3 prose-p:text-gray-200 prose-headings:text-yellow-200 prose-strong:text-white prose-a:text-yellow-300">
+          <ReactMarkdown>{portfolioIntro}</ReactMarkdown>
+        </div>
+      ) : (
+        <p className="text-gray-400 text-lg italic text-left">Découvrez mes projets et ensembles photographiques.</p>
+      )}
+    </div>
+  </div>
+);
+
+interface AlbumGridProps {
+  albums: any[];
+  username: string;
   emptyText?: string;
 }
 
-const TabProjects = ({ albums, portfolioIntro, username, title, emptyText }: TabProjectsProps) => (
-  <div>
-    {title && <h2 className="text-3xl font-bold text-yellow-400 text-center mb-4">{title}</h2>}
-    <p className="text-center text-gray-400 mb-10 text-lg italic">
-      {portfolioIntro || 'Découvrez mes projets.'}
-    </p>
-    {albums.length === 0 ? (
+const AlbumGrid = ({ albums, username, emptyText }: AlbumGridProps) => {
+  if (albums.length === 0) {
+    return (
       <div className="text-center py-20">
         <p className="text-gray-500 text-xl">{emptyText || 'Aucun album mis en avant.'}</p>
       </div>
-    ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {albums.map((album: any) => (
-          <Link
-            key={album._id}
-            to={`/album/${album._id}?mode=viewer`}
-            state={{
-              fromPortfolio: true,
-              portfolioPath: `/portfolio/${username}`,
-              portfolioLabel: `← Retour au portfolio de ${username}`,
-            }}
-            className="group block"
-          >
-            <div className="relative overflow-hidden rounded-xl shadow-2xl bg-gray-800 transform transition duration-500 group-hover:scale-[1.02] group-hover:shadow-yellow-500/10">
-              <div className="aspect-[4/3] overflow-hidden">
-                {album.coverImage ? (
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7 md:gap-8">
+      {albums.map((album: any) => (
+        <Link
+          key={album._id}
+          to={`/album/${album._id}?mode=viewer`}
+          state={{
+            fromPortfolio: true,
+            portfolioPath: `/portfolio/${username}`,
+            portfolioLabel: `← Retour au portfolio de ${username}`,
+          }}
+          className="group block"
+        >
+          <article className="h-full overflow-hidden rounded-[1.2rem] border border-white/10 bg-black shadow-[0_18px_60px_rgba(0,0,0,0.34)] transition duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-[0_24px_70px_rgba(0,0,0,0.45)]">
+            <div className="relative aspect-[4/3] overflow-hidden bg-black">
+              {album.coverImage ? (
+                <>
                   <img
                     src={`/uploads/${album.coverImage}`}
-                    className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
+                    className="w-full h-full object-cover transition duration-700 group-hover:scale-[1.04]"
                     alt={album.title}
                   />
-                ) : (
-                  <div className="w-full h-full bg-gray-700 flex items-center justify-center text-4xl">📷</div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition duration-500 flex items-end p-6">
-                  <div>
-                    <h3 className="text-2xl font-bold text-white">{album.title}</h3>
-                    <p className="text-gray-300 text-sm mt-1 line-clamp-2">{album.description}</p>
-                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/18 to-transparent" />
+                </>
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center text-4xl">📷</div>
+              )}
+
+              <div className="absolute inset-x-0 top-0 p-4 flex items-start justify-between">
+                <span className="text-[10px] uppercase tracking-[0.28em] text-white/70 bg-black/35 px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-sm">
+                  Album
+                </span>
+              </div>
+
+              <div className="absolute inset-x-0 bottom-0 p-5">
+                <div className="max-w-[85%]">
+                  <h3 className="text-white text-[1.3rem] font-semibold leading-tight line-clamp-2 drop-shadow-md">
+                    {album.title}
+                  </h3>
                 </div>
               </div>
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 group-hover:opacity-0 transition">
-                <h3 className="text-lg font-bold text-white drop-shadow-lg">{album.title}</h3>
+            </div>
+
+            <div className="lv-page-card-footer from-[#0d0d0d] to-black">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="min-w-0">
+                  <div className="lv-page-card-kicker text-gray-400">Sélection portfolio</div>
+                </div>
+                <span className="lv-page-card-meta">Album</span>
+              </div>
+
+              <p className="lv-page-card-excerpt">
+                {album.description || 'Découvrir cette série d’images dans la vue portfolio.'}
+              </p>
+
+              <div className="lv-page-card-bottom">
+                <span className="lv-page-card-label">Galerie</span>
+                <span className="lv-page-card-link group-hover:translate-x-0.5 transition-transform">Ouvrir →</span>
               </div>
             </div>
-          </Link>
-        ))}
-      </div>
-    )}
-  </div>
-);
+          </article>
+        </Link>
+      ))}
+    </div>
+  );
+};
 
 interface PageGridProps {
   pages: any[];
@@ -438,77 +582,13 @@ interface PageGridProps {
   emptyText: string;
 }
 
-const getPageExcerpt = (page: any) => {
-  const textSection = page.sections?.find(
-    (section: any) => section.type === 'text' || section.type === 'split_text_gallery'
-  );
-  const raw = textSection?.content || page.seoDescription || '';
-  const cleaned = String(raw)
-    .replace(/[#*_>`~-]/g, ' ')
-    .replace(/\[(.*?)\]\(.*?\)/g, '$1')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  return cleaned.length > 110 ? `${cleaned.slice(0, 110).trim()}…` : cleaned;
-};
-
-const getPageMeta = (page: any) => {
-  const galleryCount = Array.isArray(page.sections)
-    ? page.sections.filter(
-        (section: any) => section.type === 'gallery' || section.type === 'split_text_gallery'
-      ).length
-    : 0;
-
-  if (page.menuGroup === 'exhibitions') {
-    return galleryCount > 0
-      ? `${galleryCount} section${galleryCount > 1 ? 's' : ''} visuelle${galleryCount > 1 ? 's' : ''}`
-      : 'Exposition';
-  }
-
-  return galleryCount > 0
-    ? `${galleryCount} section${galleryCount > 1 ? 's' : ''} visuelle${galleryCount > 1 ? 's' : ''}`
-    : 'Série';
-};
-
-const getPageSecondaryMeta = (page: any) => {
-  if (page.menuGroup === 'exhibitions') return 'Présentation publique';
-  return 'Ensemble éditorial';
-};
-
-const getPageCover = (page: any) => {
-  return page.coverImage || page.heroImage || page.bannerImage || null;
-};
-
-const getPagePlaceholder = (page: any) => {
-  if (page.menuGroup === 'exhibitions') {
-    return {
-      label: 'Exposition',
-      accent: 'text-orange-100',
-      cardBorder: 'border-stone-200/10',
-      filmTone: 'from-stone-900 via-zinc-900 to-black',
-      sheetTone: 'bg-stone-950',
-      frameTone: 'bg-[#111111]',
-      mark: 'Cartel d’exposition',
-      footerTone: 'from-[#120f0d] to-black',
-    };
-  }
-
-  return {
-    label: 'Série',
-    accent: 'text-amber-50',
-    cardBorder: 'border-zinc-200/10',
-    filmTone: 'from-neutral-950 via-zinc-900 to-black',
-    sheetTone: 'bg-neutral-950',
-    frameTone: 'bg-[#101010]',
-    mark: 'Planche-contact',
-    footerTone: 'from-[#0d0d0d] to-black',
-  };
-};
-
 const PageGrid = ({ pages, username, title, intro, emptyText }: PageGridProps) => (
   <div>
-    <h2 className="text-3xl font-bold text-yellow-400 text-center mb-4">{title}</h2>
-    <p className="text-center text-gray-400 mb-10 text-lg italic">{intro}</p>
+    <div className="max-w-3xl mx-auto mb-10 md:mb-12 text-center">
+      <div className="text-[11px] uppercase tracking-[0.28em] text-gray-500 mb-3">Portfolio</div>
+      <h2 className="text-3xl md:text-4xl font-bold text-yellow-400 mb-4 tracking-tight">{title}</h2>
+      <p className="text-center text-gray-400 text-lg italic">{intro}</p>
+    </div>
 
     {pages.length === 0 ? (
       <div className="text-center py-20">
@@ -528,7 +608,7 @@ const PageGrid = ({ pages, username, title, intro, emptyText }: PageGridProps) =
               className="group block h-full"
             >
               <article
-                className={`h-full overflow-hidden rounded-xl bg-black border ${placeholder.cardBorder} shadow-[0_18px_60px_rgba(0,0,0,0.34)] transition duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-[0_24px_70px_rgba(0,0,0,0.45)]`}
+                className={`h-full overflow-hidden rounded-[1.2rem] bg-black border ${placeholder.cardBorder} shadow-[0_18px_60px_rgba(0,0,0,0.34)] transition duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-[0_24px_70px_rgba(0,0,0,0.45)]`}
               >
                 <div className="relative aspect-[4/3] overflow-hidden bg-black">
                   {cover ? (
@@ -564,8 +644,8 @@ const PageGrid = ({ pages, username, title, intro, emptyText }: PageGridProps) =
                       >
                         <div className={`absolute inset-0 bg-gradient-to-br ${placeholder.filmTone}`} />
                         <div className="absolute inset-0 opacity-[0.10] bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.08)_50%,transparent_100%)]" />
-                        <div className="absolute left-0 right-0 top-0 h-10 border-b border-white/5 bg-black/20" />
-                        <div className="absolute left-0 right-0 bottom-0 h-14 border-t border-white/5 bg-black/30" />
+                        <div className="absolute left-0 right-0 top-0 h-10 border-b border-white/10 bg-black/20" />
+                        <div className="absolute left-0 right-0 bottom-0 h-14 border-t border-white/10 bg-black/30" />
 
                         <div className="absolute top-3 left-3 flex gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-white/28" />
@@ -579,9 +659,7 @@ const PageGrid = ({ pages, username, title, intro, emptyText }: PageGridProps) =
 
                         <div className="absolute inset-0 px-6 py-8 flex flex-col justify-between">
                           <div>
-                            <div
-                              className={`text-[10px] uppercase tracking-[0.30em] ${placeholder.accent} mb-4`}
-                            >
+                            <div className={`text-[10px] uppercase tracking-[0.30em] ${placeholder.accent} mb-4`}>
                               {placeholder.label}
                             </div>
                             <div className="grid grid-cols-3 gap-2 mb-5 opacity-75">
@@ -593,9 +671,6 @@ const PageGrid = ({ pages, username, title, intro, emptyText }: PageGridProps) =
 
                           <div className="max-w-[14rem]">
                             <div className="w-20 h-px bg-white/20 mb-4" />
-                            <div className="text-white text-[1.45rem] font-semibold leading-tight line-clamp-3 mb-3">
-                              {page.title}
-                            </div>
                             <div className="text-[10px] uppercase tracking-[0.24em] text-white/42">
                               Sans visuel de couverture
                             </div>
@@ -606,33 +681,28 @@ const PageGrid = ({ pages, username, title, intro, emptyText }: PageGridProps) =
                   )}
                 </div>
 
-                <div className={`p-5 md:p-6 bg-gradient-to-b ${placeholder.footerTone} border-t border-white/6`}>
-                  <div className="flex items-start justify-between gap-3 mb-2">
+                <div className={`lv-page-card-footer ${placeholder.footerTone}`}>
+                  <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="min-w-0">
-                      <div
-                        className={`text-[10px] uppercase tracking-[0.26em] ${placeholder.accent} mb-2`}
-                      >
+                      <div className={`lv-page-card-kicker ${placeholder.accent}`}>
                         {getPageSecondaryMeta(page)}
                       </div>
-                      <h3 className="text-lg md:text-[1.15rem] font-semibold text-white leading-snug line-clamp-2 group-hover:text-yellow-200 transition">
-                        {page.title}
-                      </h3>
+
+                      {!cover && (
+                        <h3 className="lv-page-card-title group-hover:text-yellow-200 transition">
+                          {page.title}
+                        </h3>
+                      )}
                     </div>
 
-                    <span className="text-[10px] uppercase tracking-[0.18em] text-gray-500 whitespace-nowrap pt-1">
-                      {getPageMeta(page)}
-                    </span>
+                    <span className="lv-page-card-meta">{getPageMeta(page)}</span>
                   </div>
 
-                  <p className="text-sm text-gray-400 line-clamp-2 min-h-[3rem] max-w-[44ch]">
-                    {excerpt || 'Découvrir cette page.'}
-                  </p>
+                  <p className="lv-page-card-excerpt">{excerpt || 'Découvrir cette page.'}</p>
 
-                  <div className="mt-5 flex items-center justify-between">
-                    <span className="text-[11px] uppercase tracking-[0.22em] text-gray-600">
-                      Portfolio
-                    </span>
-                    <span className="text-sm text-yellow-300 font-medium group-hover:translate-x-0.5 transition-transform">
+                  <div className="lv-page-card-bottom">
+                    <span className="lv-page-card-label">Portfolio</span>
+                    <span className="lv-page-card-link group-hover:translate-x-0.5 transition-transform">
                       Ouvrir →
                     </span>
                   </div>
@@ -655,17 +725,18 @@ interface ContentTabProps {
 }
 
 const ContentTab = ({ title, content, emptyText, ctaLabel, onCtaClick }: ContentTabProps) => (
-  <div className="max-w-3xl mx-auto">
-    <div className="bg-gray-800/50 backdrop-blur border border-white/10 rounded-xl p-8 shadow-2xl">
-      <h2 className="text-2xl font-bold text-yellow-400 mb-6">{title}</h2>
+  <div className="max-w-4xl mx-auto">
+    <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] backdrop-blur-sm px-6 py-7 md:px-8 md:py-9 shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
+      <div className="text-[11px] uppercase tracking-[0.28em] text-gray-500 mb-3">À propos</div>
+      <h2 className="text-2xl md:text-3xl font-bold text-yellow-400 mb-6 tracking-tight">{title}</h2>
       {content ? (
-        <div className="prose prose-invert max-w-none">
+        <div className="prose prose-invert max-w-none prose-p:text-gray-200 prose-headings:text-white prose-strong:text-white prose-a:text-yellow-300">
           <ReactMarkdown>{content}</ReactMarkdown>
         </div>
       ) : (
         <p className="text-gray-500 italic">{emptyText}</p>
       )}
-      <div className="mt-8 pt-8 border-t border-gray-700 text-center">
+      <div className="mt-8 pt-8 border-t border-gray-800 text-center">
         <button
           onClick={onCtaClick}
           className="bg-yellow-500 hover:bg-yellow-400 text-black px-8 py-3 rounded-full font-bold transition text-lg"
@@ -686,71 +757,89 @@ interface ContactModalProps {
   onClose: () => void;
 }
 
-const ContactModal = ({ userName, form, status, onChange, onSend, onClose }: ContactModalProps) => (
-  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4">
-    <div className="bg-gray-900 border border-white/10 rounded-xl p-6 max-w-md w-full">
-      <h3 className="text-xl font-bold text-yellow-400 mb-4">Contacter {userName}</h3>
+const ContactModal = ({ userName, form, status, onChange, onSend, onClose }: ContactModalProps) => {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
 
-      {status === 'sent' ? (
-        <div className="text-center py-8">
-          <p className="text-green-400 text-lg font-bold">✓ Message envoyé !</p>
-          <button onClick={onClose} className="mt-4 text-sm text-gray-400 hover:text-white">
-            Fermer
-          </button>
-        </div>
-      ) : (
-        <>
-          <input
-            type="text"
-            placeholder="Votre nom *"
-            value={form.name}
-            onChange={e => onChange('name', e.target.value)}
-            className="w-full bg-black/30 p-3 rounded border border-white/10 text-white mb-3"
-          />
-          <input
-            type="email"
-            placeholder="Votre email *"
-            value={form.email}
-            onChange={e => onChange('email', e.target.value)}
-            className="w-full bg-black/30 p-3 rounded border border-white/10 text-white mb-3"
-          />
-          <textarea
-            placeholder="Votre message *"
-            value={form.message}
-            onChange={e => onChange('message', e.target.value)}
-            className="w-full bg-black/30 p-3 rounded border border-white/10 text-white h-28 mb-4"
-          />
-          {status === 'error' && (
-            <p className="text-red-400 text-sm mb-3">Erreur lors de l&apos;envoi. Réessayez.</p>
-          )}
-          <div className="flex gap-2 justify-end">
-            <button onClick={onClose} className="px-4 py-2 text-sm text-gray-400">
-              Annuler
-            </button>
-            <button
-              onClick={onSend}
-              disabled={status === 'sending'}
-              className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black rounded text-sm font-bold disabled:opacity-50"
-            >
-              {status === 'sending' ? 'Envoi...' : 'Envoyer'}
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="contact-modal-title"
+        className="bg-gray-900 border border-white/10 rounded-xl p-6 max-w-md w-full relative"
+        onClick={e => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Fermer la fenêtre de contact"
+          className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition"
+        >
+          ✕
+        </button>
+
+        <h3 id="contact-modal-title" className="text-xl font-bold text-yellow-400 mb-4 pr-10">
+          Contacter {userName}
+        </h3>
+
+        {status === 'sent' ? (
+          <div className="text-center py-8">
+            <p className="text-green-400 text-lg font-bold">✓ Message envoyé !</p>
+            <button onClick={onClose} className="mt-4 text-sm text-gray-400 hover:text-white">
+              Fermer
             </button>
           </div>
-        </>
-      )}
+        ) : (
+          <>
+            <input
+              type="text"
+              placeholder="Votre nom *"
+              value={form.name}
+              onChange={e => onChange('name', e.target.value)}
+              className="lv-input-safe mb-3"
+            />
+            <input
+              type="email"
+              placeholder="Votre email *"
+              value={form.email}
+              onChange={e => onChange('email', e.target.value)}
+              className="lv-input-safe mb-3"
+            />
+            <textarea
+              placeholder="Votre message *"
+              value={form.message}
+              onChange={e => onChange('message', e.target.value)}
+              className="lv-textarea-safe mb-4"
+            />
+            {status === 'error' && (
+              <p className="text-red-400 text-sm mb-3">Erreur lors de l&apos;envoi. Réessayez.</p>
+            )}
+            <div className="flex gap-2 justify-end">
+              <button onClick={onClose} className="px-4 py-2 text-sm text-gray-400">
+                Annuler
+              </button>
+              <button
+                onClick={onSend}
+                disabled={status === 'sending'}
+                className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black rounded text-sm font-bold disabled:opacity-50"
+              >
+                {status === 'sending' ? 'Envoi...' : 'Envoyer'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
-  </div>
-);
-
-const filterMenuPages = (pages: any[], group: MenuGroup) => {
-  return [...pages]
-    .filter(page => page.menuGroup === group)
-    .filter(page => page.showInMenu === true)
-    .sort((a, b) => {
-      const orderA = a.menuOrder ?? 0;
-      const orderB = b.menuOrder ?? 0;
-      if (orderA !== orderB) return orderA - orderB;
-      return (a.title || '').localeCompare(b.title || '', 'fr', { sensitivity: 'base' });
-    });
+  );
 };
 
 const PortfolioPage = () => {
@@ -842,9 +931,8 @@ const PortfolioPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white font-sans">
-      <PortfolioHero user={user} authUser={authUser} />
-      <div className="h-12 bg-gray-900" />
+    <div className="min-h-screen bg-gray-950 text-white font-sans">
+      <PortfolioHero user={user} authUser={authUser} onContact={openContact} />
 
       <PortfolioMenu
         activeTab={activeTab}
@@ -855,15 +943,19 @@ const PortfolioPage = () => {
         exhibitionPages={exhibitionPages}
       />
 
-      <div className="max-w-7xl mx-auto px-4 pb-24">
+      <main className="max-w-7xl mx-auto px-4 md:px-6 pb-24">
         {activeTab === 'home' && (
-          <TabProjects
-            albums={albums}
-            portfolioIntro={user.portfolioIntro}
-            username={username!}
-            title="Accueil"
-            emptyText="Aucun contenu mis en avant pour le moment."
-          />
+          <>
+            <HomeIntro
+              portfolioIntro={user.portfolioIntro}
+              title="Accueil"
+            />
+            <AlbumGrid
+              albums={albums}
+              username={username!}
+              emptyText="Aucun contenu mis en avant pour le moment."
+            />
+          </>
         )}
 
         {activeTab === 'series' && (
@@ -895,17 +987,13 @@ const PortfolioPage = () => {
             onCtaClick={openContact}
           />
         )}
-      </div>
+      </main>
 
-      <div className="text-center py-10 border-t border-gray-800 mt-10 text-gray-600 text-sm">
+      <footer className="text-center py-10 border-t border-gray-900 mt-14 text-gray-600 text-sm">
         © {new Date().getFullYear()} {user.name}. Portfolio Hélioscope.
-      </div>
+      </footer>
 
-      <button
-        onClick={openContact}
-        title="Me contacter"
-        className="fixed bottom-6 right-6 bg-green-500 hover:bg-green-400 text-black p-4 rounded-full shadow-2xl flex items-center gap-2 font-bold text-sm transition transform hover:scale-110 z-50"
-      >
+      <button onClick={openContact} title="Me contacter" className="lv-btn-contact-safe">
         <span>✉️</span>
         <span className="hidden sm:inline">Me Contacter</span>
       </button>

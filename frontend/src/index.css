@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import './styles/lv-components.css';
 
 /* Tu peux garder tes styles personnalisés globaux ici */
 body {

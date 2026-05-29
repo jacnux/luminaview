@@ -2,10 +2,10 @@
 // luminaview
 //         UserPageView
 //
-//     Mai 2026 v2.4.1
+//     Mai 2026 v2.5.0
 // ===========================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../utils/api';
 import Lightbox from '../components/Lightbox';
@@ -97,6 +97,47 @@ const CommentModal = ({ photo, onClose }: { photo: any; onClose: () => void }) =
   </div>
 );
 
+/* const stripMarkdown = (value: string = '') =>
+  String(value)
+    .replace(/[#*_>`~-]/g, ' ')
+    .replace(/\[(.*?)\]\(.*?\)/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();*/
+
+    const stripMarkdown = (value: string = '') => {
+      const raw = String(value || '');
+
+      // 1. Nettoyage Markdown de base
+      const withoutMd = raw
+        .replace(/[#*_>`~-]/g, ' ')
+        .replace(/\[(.*?)\]\(.*?\)/g, '$1');
+
+      // 2. Suppression des balises HTML (br, img, etc.)
+      const withoutHtml = withoutMd.replace(/<[^>]*>/g, ' ');
+
+      // 3. Normalisation des espaces
+      return withoutHtml.replace(/\s+/g, ' ').trim();
+    };
+
+const getEditorialIntro = (page: any) => {
+  const textSection = Array.isArray(page?.sections)
+    ? page.sections.find((section: any) => section?.type === 'text' || section?.type === 'split_text_gallery')
+    : null;
+
+  const source = stripMarkdown(textSection?.content || page?.seoDescription || '');
+  if (!source) return '';
+
+  return source.length > 240 ? `${source.slice(0, 240).trim()}…` : source;
+};
+
+const getHeroImage = (page: any) => page?.coverImage || page?.heroImage || page?.bannerImage || null;
+
+const getPageLabel = (page: any) => {
+  if (page?.menuGroup === 'exhibitions') return 'Exposition';
+  if (page?.menuGroup === 'series') return 'Série';
+  return 'Page';
+};
+
 const UserPageView = () => {
   const { username, slug } = useParams<{ username?: string; slug?: string }>();
   const [page, setPage] = useState<any>(null);
@@ -181,6 +222,10 @@ const UserPageView = () => {
     }
   };
 
+  const heroImage = useMemo(() => getHeroImage(page), [page]);
+  const editorialIntro = useMemo(() => getEditorialIntro(page), [page]);
+  const pageLabel = useMemo(() => getPageLabel(page), [page]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">
@@ -222,28 +267,59 @@ const UserPageView = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <div className="py-12 border-b border-gray-800 text-center">
-        <h1 className="text-4xl font-bold text-yellow-400">{page.title || 'Page'}</h1>
-        {!isSubdomainMode && username ? (
-          <Link
-            to={`/portfolio/${username}`}
-            className="text-sm text-gray-500 hover:text-white mt-2 inline-block"
-          >
-            ← Retour au portfolio de {username}
-          </Link>
-        ) : (
-          <div className="text-sm text-gray-500 mt-2 inline-block">Portfolio public</div>
-        )}
-      </div>
+    <div className="min-h-screen bg-gray-950 text-white">
+      <header className="relative border-b border-white/10 bg-black overflow-hidden">
+        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.16),transparent_40%)]" />
 
-      <div className="max-w-6xl mx-auto py-10 px-4">
+        {heroImage ? (
+          <div className="relative h-[42vh] min-h-[320px] max-h-[560px] overflow-hidden">
+            <img
+              src={`/uploads/${heroImage}`}
+              alt={page.title || 'Page'}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-black/45 to-black/30" />
+          </div>
+        ) : (
+          <div className="h-40 md:h-56 bg-[linear-gradient(135deg,#111111_0%,#1b1b1b_45%,#050505_100%)]" />
+        )}
+
+        <div className="relative max-w-5xl mx-auto px-4 md:px-6 py-10 md:py-12 -mt-8 md:-mt-14">
+          <div className="bg-black/55 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl px-6 py-6 md:px-8 md:py-8">
+            <div className="text-[11px] uppercase tracking-[0.28em] text-gray-400 mb-3">{pageLabel}</div>
+            <h1 className="text-3xl md:text-5xl font-bold text-white tracking-tight leading-tight max-w-4xl">
+              {page.title || 'Page'}
+            </h1>
+
+            {!isSubdomainMode && username ? (
+              <Link
+                to={`/portfolio/${username}`}
+                className="inline-flex items-center text-sm text-gray-400 hover:text-white mt-4 transition"
+              >
+                ← Retour au portfolio de {username}
+              </Link>
+            ) : (
+              <div className="text-sm text-gray-500 mt-4 inline-block">Portfolio public</div>
+            )}
+
+            {editorialIntro && (
+              <div className="mt-6 border-t border-white/10 pt-6 max-w-3xl">
+                <p className="text-base md:text-lg leading-8 text-gray-200">
+                  {editorialIntro}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-6xl mx-auto py-10 px-4 md:px-6">
         {childPages.length > 0 && (
-          <div className="mb-10 max-w-xl">
+          <div className="mb-10 max-w-2xl">
             <button
               type="button"
               onClick={() => setShowChildMenu(prev => !prev)}
-              className="w-full flex items-center justify-between rounded-xl border border-gray-700 bg-gray-800/80 hover:bg-gray-800 px-4 py-3 text-left transition"
+              className="w-full flex items-center justify-between rounded-xl border border-gray-700 bg-gray-900/80 hover:bg-gray-900 px-4 py-3 text-left transition"
               aria-expanded={showChildMenu}
               aria-label="Afficher les sous-pages"
             >
@@ -259,7 +335,7 @@ const UserPageView = () => {
             </button>
 
             {showChildMenu && (
-              <div className="mt-3 rounded-2xl border border-gray-800 bg-gray-900/95 backdrop-blur overflow-hidden shadow-2xl">
+              <div className="mt-3 rounded-2xl border border-gray-800 bg-gray-950/95 backdrop-blur overflow-hidden shadow-2xl">
                 <div className="divide-y divide-gray-800">
                   {childPages.map((child: any) => (
                     <Link
@@ -276,7 +352,7 @@ const UserPageView = () => {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-gray-800 via-gray-850 to-black flex items-center justify-center text-gray-500 text-[10px] uppercase tracking-[0.2em]">
+                          <div className="w-full h-full bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center text-gray-500 text-[10px] uppercase tracking-[0.2em]">
                             {child.menuGroup === 'exhibitions' ? 'Expo' : 'Série'}
                           </div>
                         )}
@@ -306,17 +382,15 @@ const UserPageView = () => {
 
             if (section.type === 'text') {
               return (
-                <div key={index} className="mb-12 max-w-none">
-                  <div className="bg-gray-800/30 p-6 rounded-xl border border-gray-700">
+                <section key={index} className="mb-12 max-w-4xl mx-auto">
+                  <div className="bg-white/[0.03] p-6 md:p-8 rounded-2xl border border-white/10 shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
                     <MarkdownRenderer
-                      className="prose prose-invert prose-lg max-w-none
-                      prose-headings:text-white prose-p:text-white prose-li:text-white
-                      prose-strong:text-white prose-a:text-yellow-400 hover:prose-a:text-yellow-300"
+                      className="prose prose-invert prose-lg max-w-none prose-headings:text-white prose-p:text-gray-100 prose-li:text-gray-100 prose-strong:text-white prose-a:text-yellow-400 hover:prose-a:text-yellow-300"
                     >
                       {section.content || ''}
                     </MarkdownRenderer>
                   </div>
-                </div>
+                </section>
               );
             }
 
@@ -324,16 +398,18 @@ const UserPageView = () => {
               if (!section.albumIds || section.albumIds.length === 0) return null;
 
               return (
-                <div key={index} className="mb-12">
+                <section key={index} className="mb-14">
                   {section.albumIds.map((album: any) => {
                     if (!album) return null;
 
                     return (
                       <div key={album._id || Math.random()} className="my-6">
                         {album.title && (
-                          <h3 className="text-xl font-bold mb-4 text-gray-300">{album.title}</h3>
+                          <div className="mb-5 flex items-end justify-between gap-4 border-b border-white/10 pb-3">
+                            <h3 className="text-xl md:text-2xl font-semibold text-white tracking-tight">{album.title}</h3>
+                          </div>
                         )}
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
                           {album.photos &&
                             album.photos.map((photo: any, i: number) =>
                               renderPhoto(photo, album.photos, i),
@@ -342,28 +418,28 @@ const UserPageView = () => {
                       </div>
                     );
                   })}
-                </div>
+                </section>
               );
             }
 
             if (section.type === 'split_text_gallery') {
               return (
-                <div
+                <section
                   key={index}
-                  className="mb-12 flex flex-col md:flex-row gap-8 items-start border-b border-gray-800 pb-12"
+                  className="mb-14 grid grid-cols-1 lg:grid-cols-[minmax(0,0.34fr)_minmax(0,0.66fr)] gap-8 items-start border-b border-white/10 pb-12"
                 >
-                  <div className="w-full md:w-[30%] bg-gray-800/50 p-6 rounded self-stretch overflow-hidden">
-                    <div className="prose prose-invert prose-sm max-w-none">
+                  <div className="bg-white/[0.04] p-6 md:p-7 rounded-2xl border border-white/10 self-stretch overflow-hidden">
+                    <div className="prose prose-invert prose-sm md:prose-base max-w-none prose-p:text-gray-100 prose-headings:text-white prose-strong:text-white prose-a:text-yellow-400">
                       <MarkdownRenderer className="prose">{section.content || ''}</MarkdownRenderer>
                     </div>
                   </div>
-                  <div className="w-full md:w-[70%]">
+                  <div className="w-full">
                     {section.albumIds && section.albumIds.length > 0 ? (
                       section.albumIds.map((album: any) => {
                         if (!album) return null;
 
                         return (
-                          <div key={album._id || Math.random()} className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          <div key={album._id || Math.random()} className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
                             {album.photos &&
                               album.photos.map((photo: any, i: number) =>
                                 renderPhoto(photo, album.photos, i),
@@ -372,12 +448,12 @@ const UserPageView = () => {
                         );
                       })
                     ) : (
-                      <p className="text-gray-500 text-center border border-dashed p-4 rounded">
+                      <p className="text-gray-500 text-center border border-dashed border-white/10 p-4 rounded-2xl">
                         Aucun album.
                       </p>
                     )}
                   </div>
-                </div>
+                </section>
               );
             }
 
