@@ -6,6 +6,7 @@
 
 import { Router, Request, Response } from 'express';
 import mongoose from 'mongoose';
+import Album from '../models/Album';
 import UserPage from '../models/UserPage';
 import User from '../models/User';
 import Photo from '../models/Photo';
@@ -45,55 +46,7 @@ const normalizeEditorialSummary = (value: unknown) => {
   return value.trim();
 };
 
-const hydratePageAlbumsWithPhotos = async (page: any, ownerUserId: string) => {
-  const pageObject = page.toObject();
 
-  for (const section of pageObject.sections) {
-    if ((section.type === 'gallery' || section.type === 'split_text_gallery') && section.albumIds) {
-      for (const album of section.albumIds) {
-        if (!album) continue;
-
-        let photos: any[] = [];
-        const selectFields = 'filename title description';
-
-        if (album.isVirtual) {
-          const query: any = { userId: ownerUserId };
-
-          if (album.virtualFilter === 'tag' && album.filterValue) {
-            const tagsList = album.filterValue
-              .split(',')
-              .map((t: string) => t.trim())
-              .filter((t: string) => t);
-
-            const positiveTags = tagsList.filter((t: string) => !t.startsWith('-'));
-            const negativeTags = tagsList
-              .filter((t: string) => t.startsWith('-'))
-              .map((t: string) => t.substring(1));
-
-            if (positiveTags.length > 0) {
-              query.tags = { $all: positiveTags };
-              if (negativeTags.length > 0) query.tags.$nin = negativeTags;
-            }
-          } else if (album.virtualFilter === 'date') {
-            query.createdAt = { $gte: album.startDate, $lte: album.endDate };
-          }
-
-          if (Object.keys(query).length > 1) {
-            photos = await Photo.find(query).select(selectFields).sort({ createdAt: -1 });
-          }
-        } else {
-          photos = await Photo.find({ albumId: album._id, userId: ownerUserId })
-            .select(selectFields)
-            .sort({ index: 1 });
-        }
-
-        album.photos = photos;
-      }
-    }
-  }
-
-  return pageObject;
-};
 
 const getPublicChildPages = async (pageId: string, userId: string) => {
   return UserPage.find({
@@ -105,6 +58,77 @@ const getPublicChildPages = async (pageId: string, userId: string) => {
     .select('title slug coverImage menuGroup menuOrder showInMenu parentPageId editorialSummary')
     .sort({ menuOrder: 1, title: 1 });
 };
+
+
+
+const getAlbumPhotos = async (album: any, ownerUserId: string) => {
+  const fieldsToSelect = 'filename title description createdAt index tags';
+
+  if (!album) return [];
+
+  if (album.isVirtual) {
+    if (album.virtualFilter === 'tag' && album.filterValue) {
+      const rawTags = album.filterValue
+        .split(',')
+        .map((t: string) => t.trim())
+        .filter((t: string) => t);
+
+      const positiveTags = rawTags.filter((t: string) => !t.startsWith('-'));
+      const negativeTags = rawTags
+        .filter((t: string) => t.startsWith('-'))
+        .map((t: string) => t.substring(1));
+
+      const query: any = { userId: ownerUserId };
+      const tagsCondition: any = {};
+
+      if (positiveTags.length > 0) tagsCondition.$all = positiveTags;
+      if (negativeTags.length > 0) tagsCondition.$nin = negativeTags;
+      if (Object.keys(tagsCondition).length > 0) query.tags = tagsCondition;
+
+      const validAlbums = await Album.find({ userId: ownerUserId }).select('_id').lean();
+      query.albumId = { $in: validAlbums.map((a: any) => a._id) };
+
+      return Photo.find(query)
+        .select(fieldsToSelect)
+        .sort({ createdAt: -1 });
+    }
+
+    if (album.virtualFilter === 'date' && album.startDate && album.endDate) {
+      return Photo.find({
+        userId: ownerUserId,
+        createdAt: { $gte: album.startDate, $lte: album.endDate },
+      })
+        .select(fieldsToSelect)
+        .sort({ createdAt: -1 });
+    }
+
+    return [];
+  }
+
+  return Photo.find({ albumId: album._id, userId: ownerUserId })
+    .select(fieldsToSelect)
+    .sort({ createdAt: -1 });
+};
+
+const hydratePageAlbumsWithPhotos = async (page: any, ownerUserId: string) => {
+  const pageObject = page.toObject();
+
+  for (const section of pageObject.sections) {
+    if (
+      (section.type === 'gallery' || section.type === 'split_text_gallery') &&
+      Array.isArray(section.albumIds)
+    ) {
+      for (const album of section.albumIds) {
+        if (!album) continue;
+        album.photos = await getAlbumPhotos(album, ownerUserId);
+      }
+    }
+  }
+
+  return pageObject;
+};
+
+
 
 router.get('/my/list', authenticateToken, async (req: Request, res: Response) => {
   try {
