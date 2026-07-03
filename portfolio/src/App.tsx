@@ -1,6 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const pageVariants = {
+  initial: { opacity: 0, y: 15 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } },
+  exit: { opacity: 0, y: -15, transition: { duration: 0.2 } }
+};
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } }
+};
+
+const lightboxVariants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.25 } },
+  exit: { opacity: 0, transition: { duration: 0.2 } }
+};
+
+const imageVariants = {
+  initial: { scale: 0.95, opacity: 0 },
+  animate: { scale: 1, opacity: 1, transition: { duration: 0.25, ease: 'easeOut' } },
+  exit: { scale: 0.95, opacity: 0, transition: { duration: 0.2 } }
+};
 
 // Détection dynamique de l'utilisateur pour le multi-hébergement (multi-tenant)
 const getUsernameFromEnvironment = (): string => {
@@ -221,7 +255,12 @@ const App: React.FC = () => {
             )}
             {/* PAGE : ACCUEIL */}
             {currentPage === 'home' && (
-              <div>
+              <motion.div
+                variants={pageVariants}
+                initial="initial"
+                animate="animate"
+                key="home"
+              >
                 <div className="home-photo-container">
                   {getHomeImage() ? (
                     <img 
@@ -238,23 +277,34 @@ const App: React.FC = () => {
                 <div className="home-text">
                   <ReactMarkdown>{profile?.portfolioIntro || "Bienvenue sur mon site, avec les photos que j'aime partager !"}</ReactMarkdown>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* PAGE : LISTE DES GALERIES */}
             {currentPage === 'galleries' && (
-              <div>
+              <motion.div
+                variants={pageVariants}
+                initial="initial"
+                animate="animate"
+                key="galleries"
+              >
                 <h2 className="section-title">Mes Galeries</h2>
                 {albums.length === 0 ? (
                   <p style={{ textAlign: 'center', color: '#999', margin: '40px 0' }}>Aucune galerie publique configurée comme vedette.</p>
                 ) : (
-                  <div className="grid-gallery">
+                  <motion.div 
+                    className="grid-gallery"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                  >
                     {albums.map((album) => (
-                      <a 
+                      <motion.a 
                         key={album._id} 
                         href="#" 
                         onClick={(e) => { e.preventDefault(); navigateTo('album', album._id); }}
                         className="gallery-card"
+                        variants={itemVariants}
                       >
                         <div className="gallery-cover-container">
                           {album.coverImage ? (
@@ -271,16 +321,21 @@ const App: React.FC = () => {
                           <h3>{album.title}</h3>
                           {album.description && <p>{album.description}</p>}
                         </div>
-                      </a>
+                      </motion.a>
                     ))}
-                  </div>
+                  </motion.div>
                 )}
-              </div>
+              </motion.div>
             )}
 
             {/* PAGE : PHOTOS D'UN ALBUM (MASONRY GRID) */}
             {currentPage === 'album' && (
-              <div>
+              <motion.div
+                variants={pageVariants}
+                initial="initial"
+                animate="animate"
+                key="album"
+              >
                 {(() => {
                   const currentAlbum = albums.find(a => a._id === selectedAlbumId);
                   return (
@@ -303,12 +358,18 @@ const App: React.FC = () => {
                 ) : photos.length === 0 ? (
                   <p style={{ textAlign: 'center', color: '#999', margin: '40px 0' }}>Cette galerie ne contient aucune photo.</p>
                 ) : (
-                  <div className="masonry-grid">
+                  <motion.div 
+                    className="masonry-grid"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                  >
                     {photos.map((photo, idx) => (
-                      <div 
+                      <motion.div 
                         key={photo._id} 
                         className="masonry-item" 
                         onClick={() => setLightboxIndex(idx)}
+                        variants={itemVariants}
                       >
                         <img 
                           src={`/uploads/${photo.filename}`} 
@@ -320,16 +381,21 @@ const App: React.FC = () => {
                           <h4>{photo.title || 'Sans titre'}</h4>
                           {photo.description && <p>{photo.description}</p>}
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
-                  </div>
+                  </motion.div>
                 )}
-              </div>
+              </motion.div>
             )}
 
             {/* PAGE : A PROPOS */}
             {currentPage === 'about' && (
-              <div>
+              <motion.div
+                variants={pageVariants}
+                initial="initial"
+                animate="animate"
+                key="about"
+              >
                 <h2 className="section-title">À propos</h2>
                 <div className="about-section">
                   <div className="about-avatar-container">
@@ -347,12 +413,17 @@ const App: React.FC = () => {
                     <p>Découvrez mes clichés classés par séries thématiques à travers l'onglet Galeries.</p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* PAGE : CONTACT */}
             {currentPage === 'contact' && (
-              <div>
+              <motion.div
+                variants={pageVariants}
+                initial="initial"
+                animate="animate"
+                key="contact"
+              >
                 <h2 className="section-title">Me Contacter</h2>
                 <form className="contact-form" onSubmit={(e) => { e.preventDefault(); alert("Message envoyé ! (Simulation)"); }}>
                   <div>
@@ -369,7 +440,7 @@ const App: React.FC = () => {
                   </div>
                   <button type="submit" className="btn-submit">Envoyer</button>
                 </form>
-              </div>
+              </motion.div>
             )}
           </>
         )}
@@ -384,54 +455,67 @@ const App: React.FC = () => {
       </main>
 
       {/* VISIONNEUSE LIGHTBOX (PLEIN ÉCRAN NOIR) */}
-      {lightboxIndex !== null && photos.length > 0 && (
-        <div className="lightbox-overlay">
-          {/* Header */}
-          <div className="lightbox-header">
-            <span className="lightbox-title">
-              {photos[lightboxIndex].title || 'Sans titre'}
-            </span>
-            <button className="lightbox-close" onClick={() => setLightboxIndex(null)}>
-              ×
-            </button>
-          </div>
-
-          {/* Corps avec l'image zoomée */}
-          <div className="lightbox-body">
-            {photos.length > 1 && (
-              <button 
-                className="lightbox-nav-btn prev"
-                onClick={() => setLightboxIndex(prev => (prev === null || prev === 0 ? photos.length - 1 : prev - 1))}
-              >
-                ‹
+      <AnimatePresence>
+        {lightboxIndex !== null && photos.length > 0 && (
+          <motion.div 
+            className="lightbox-overlay"
+            variants={lightboxVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            {/* Header */}
+            <div className="lightbox-header">
+              <span className="lightbox-title">
+                {photos[lightboxIndex].title || 'Sans titre'}
+              </span>
+              <button className="lightbox-close" onClick={() => setLightboxIndex(null)}>
+                ×
               </button>
-            )}
+            </div>
 
-            <img 
-              src={`/uploads/${photos[lightboxIndex].filename}`} 
-              alt="Zoomed" 
-              className="lightbox-img" 
-            />
+            {/* Corps avec l'image zoomée */}
+            <div className="lightbox-body">
+              {photos.length > 1 && (
+                <button 
+                  className="lightbox-nav-btn prev"
+                  onClick={() => setLightboxIndex(prev => (prev === null || prev === 0 ? photos.length - 1 : prev - 1))}
+                >
+                  ‹
+                </button>
+              )}
 
-            {photos.length > 1 && (
-              <button 
-                className="lightbox-nav-btn next"
-                onClick={() => setLightboxIndex(prev => (prev === null || prev === photos.length - 1 ? 0 : prev + 1))}
-              >
-                ›
-              </button>
-            )}
-          </div>
+              <motion.img 
+                key={lightboxIndex}
+                src={`/uploads/${photos[lightboxIndex].filename}`} 
+                alt="Zoomed" 
+                className="lightbox-img" 
+                variants={imageVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              />
 
-          {/* Footer descriptif */}
-          <div className="lightbox-footer">
-            <span>{lightboxIndex + 1} / {photos.length}</span>
-            {photos[lightboxIndex].description && (
-              <p className="lightbox-desc">{photos[lightboxIndex].description}</p>
-            )}
-          </div>
-        </div>
-      )}
+              {photos.length > 1 && (
+                <button 
+                  className="lightbox-nav-btn next"
+                  onClick={() => setLightboxIndex(prev => (prev === null || prev === photos.length - 1 ? 0 : prev + 1))}
+                >
+                  ›
+                </button>
+              )}
+            </div>
+
+            {/* Footer descriptif */}
+            <div className="lightbox-footer">
+              <span>{lightboxIndex + 1} / {photos.length}</span>
+              {photos[lightboxIndex].description && (
+                <p className="lightbox-desc">{photos[lightboxIndex].description}</p>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* FILIGRANE FLOTTANT D'INTÉGRATION */}
       <a 
