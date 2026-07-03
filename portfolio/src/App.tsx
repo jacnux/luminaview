@@ -22,6 +22,13 @@ const getUsernameFromEnvironment = (): string => {
 
 const USERNAME = getUsernameFromEnvironment();
 
+const formatName = (name?: string): string => {
+  if (!name) return 'Jac';
+  const trimmed = name.trim();
+  if (trimmed.length === 0) return 'Jac';
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+};
+
 interface UserProfile {
   name: string;
   email: string;
@@ -129,7 +136,7 @@ const App: React.FC = () => {
       <header className="header">
         <div className="header-title">
           <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('home'); }} className="logo">
-            {profile ? profile.name : 'Jac'}
+            {formatName(profile?.name)}
           </a>
           <div className="header-subtitle">Photographies</div>
         </div>
@@ -219,7 +226,7 @@ const App: React.FC = () => {
                   {getHomeImage() ? (
                     <img 
                       src={getHomeImage()!} 
-                      alt={profile?.name || 'Jac'} 
+                      alt={formatName(profile?.name)} 
                       className="home-photo" 
                     />
                   ) : (
@@ -334,7 +341,7 @@ const App: React.FC = () => {
                   </div>
                   <div className="about-content">
                     <p style={{ fontSize: '1.2rem', fontWeight: 400, color: 'var(--color-accent)', marginBottom: '15px' }}>
-                      {profile?.name || 'Jac'} — Photographies
+                      {formatName(profile?.name)} — Photographies
                     </p>
                     <ReactMarkdown>{profile?.bio || "Bonjour à tous les amoureux de photographie et aux curieux qui passent par ici ! Bienvenue sur mon site, avec les photos que j'aime partager !"}</ReactMarkdown>
                     <p>Découvrez mes clichés classés par séries thématiques à travers l'onglet Galeries.</p>
@@ -369,7 +376,7 @@ const App: React.FC = () => {
         
         {/* FOOTER & MENTION LUMINAVIEW */}
         <footer className="footer">
-          <div>© 2026 - {profile?.name || 'Jac'}.</div>
+          <div>© 2026 - {formatName(profile?.name)}.</div>
           <div>
             Propulsé par <a href={window.location.origin} target="_blank" rel="noopener noreferrer">LuminaView</a>
           </div>
