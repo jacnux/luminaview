@@ -153,7 +153,7 @@ const EmbedAlbumView: React.FC = () => {
           <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
         </span>
         <span className="font-medium tracking-wide">
-          Hébergé par <span className="text-yellow-400 font-bold group-hover:text-yellow-300 transition-colors">LuminaView</span>
+          Propulsé par <span className="text-yellow-400 font-bold group-hover:text-yellow-300 transition-colors">LuminaView</span>
         </span>
       </a>
     </div>
