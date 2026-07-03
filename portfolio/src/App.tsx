@@ -128,6 +128,9 @@ const App: React.FC = () => {
   // Choix de la couleur du fond de la lightbox ('black', 'gray', 'white')
   const [lightboxBgColor, setLightboxBgColor] = useState<'black' | 'gray' | 'white'>('black');
 
+  // Afficher/Masquer le commentaire (description) de la photo
+  const [showDescription, setShowDescription] = useState(false);
+
   // Charger le profil et les albums vedettes
   useEffect(() => {
     const fetchProfile = async () => {
@@ -183,6 +186,7 @@ const App: React.FC = () => {
     setReportReason('');
     setReportSuccess(null);
     setReportError(null);
+    setShowDescription(false);
   }, [lightboxIndex]);
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
@@ -646,13 +650,22 @@ const App: React.FC = () => {
             {/* Footer descriptif */}
             <div className="lightbox-footer">
               <span>{lightboxIndex + 1} / {photos.length}</span>
-              {photos[lightboxIndex].description && (
+              {showDescription && photos[lightboxIndex].description && (
                 <p className="lightbox-desc">{photos[lightboxIndex].description}</p>
               )}
             </div>
 
             {/* BOUTONS D'ACTION FLOTTANTS EN BAS À DROITE */}
             <div className="lightbox-actions">
+              {photos[lightboxIndex].description && (
+                <button 
+                  className={`lightbox-action-btn desc-toggle-btn ${showDescription ? 'active' : ''}`}
+                  onClick={() => setShowDescription(!showDescription)}
+                  title={showDescription ? "Masquer la description" : "Afficher la description"}
+                >
+                  ℹ️
+                </button>
+              )}
               <button 
                 className="lightbox-action-btn fullscreen-btn" 
                 onClick={toggleFullscreen}

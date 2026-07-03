@@ -667,9 +667,13 @@ body {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
-.lightbox-action-btn:hover {
+.lightbox-action-btn:hover,
+.lightbox-action-btn.active {
   background-color: var(--color-accent);
   border-color: var(--color-accent);
+}
+
+.lightbox-action-btn:hover {
   transform: translateY(-2px);
 }
 
