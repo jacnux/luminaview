@@ -122,6 +122,9 @@ const App: React.FC = () => {
   const [reportSuccess, setReportSuccess] = useState<string | null>(null);
   const [reportError, setReportError] = useState<string | null>(null);
 
+  // État plein écran
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
   // Charger le profil et les albums vedettes
   useEffect(() => {
     const fetchProfile = async () => {
@@ -233,6 +236,29 @@ const App: React.FC = () => {
       setSubmittingReport(false);
     }
   };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen()
+        .then(() => setIsFullscreen(true))
+        .catch(err => console.error("Erreur d'activation du plein écran:", err));
+    } else {
+      document.exitFullscreen()
+        .then(() => setIsFullscreen(false))
+        .catch(err => console.error("Erreur de sortie du plein écran:", err));
+    }
+  };
+
+  // Écouter le changement de mode plein écran (ex: touche Échap)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   // Gérer la navigation
   const navigateTo = (page: 'home' | 'galleries' | 'album' | 'about' | 'contact', albumId: string | null = null) => {
@@ -554,7 +580,12 @@ const App: React.FC = () => {
               <span className="lightbox-title">
                 {photos[lightboxIndex].title || 'Sans titre'}
               </span>
-              <button className="lightbox-close" onClick={() => setLightboxIndex(null)}>
+              <button className="lightbox-close" onClick={() => {
+                setLightboxIndex(null);
+                if (document.fullscreenElement) {
+                  document.exitFullscreen().catch(err => console.error("Erreur exit fullscreen:", err));
+                }
+              }}>
                 ×
               </button>
             </div>
@@ -601,6 +632,13 @@ const App: React.FC = () => {
 
             {/* BOUTONS D'ACTION FLOTTANTS EN BAS À DROITE */}
             <div className="lightbox-actions">
+              <button 
+                className="lightbox-action-btn fullscreen-btn" 
+                onClick={toggleFullscreen}
+                title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
+              >
+                {isFullscreen ? "🗗" : "⛶"}
+              </button>
               <button 
                 className="lightbox-action-btn comment-btn" 
                 onClick={() => setShowCommentModal(true)}
