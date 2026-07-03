@@ -131,6 +131,34 @@ body {
   color: var(--color-accent);
 }
 
+/* Submenu layout for nested galleries */
+.submenu {
+  list-style: none;
+  padding-left: 15px;
+  margin-top: 6px;
+  margin-bottom: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.submenu a {
+  font-size: 0.8rem;
+  text-transform: none;
+  color: var(--color-text-light);
+  letter-spacing: 0.02em;
+  padding: 2px 0;
+}
+
+@media (max-width: 1191px) {
+  .submenu {
+    padding-left: 0;
+    align-items: center;
+    margin-top: 4px;
+    margin-bottom: 8px;
+  }
+}
+
 /* Menu Mobile Toggle */
 .menu-toggle {
   display: none;

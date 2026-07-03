@@ -319,20 +319,22 @@ const App: React.FC = () => {
                 >
                   Galeries
                 </a>
+                {albums.length > 0 && (
+                  <ul className="submenu">
+                    {albums.slice(0, 5).map((album) => (
+                      <li key={album._id}>
+                        <a 
+                          href="#" 
+                          onClick={(e) => { e.preventDefault(); navigateTo('album', album._id); }}
+                          className={currentPage === 'album' && selectedAlbumId === album._id ? 'active' : ''}
+                        >
+                          {album.title}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
-              
-              {/* Albums Vedettes insérés dynamiquement dans le menu */}
-              {albums.slice(0, 3).map((album) => (
-                <li key={album._id}>
-                  <a 
-                    href="#" 
-                    onClick={(e) => { e.preventDefault(); navigateTo('album', album._id); }}
-                    className={currentPage === 'album' && selectedAlbumId === album._id ? 'active' : ''}
-                  >
-                    {album.title}
-                  </a>
-                </li>
-              ))}
               
               <li>
                 <a 
