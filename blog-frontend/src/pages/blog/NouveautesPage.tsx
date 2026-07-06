@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import MarkdownRenderer from '../../components/MarkdownRenderer';
+import ReactMarkdown from 'react-markdown';
 import { getBlogSlug } from '../../utils/getBlogSlug';
 import { API_PREFIX } from '../../utils/blogApi';
 
@@ -33,7 +33,7 @@ const NouveautesPage: React.FC = () => {
       
       <div className="w-full border-t border-black/[0.06] dark:border-white/[0.06] pt-8 mb-8 text-left">
         <div className="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 leading-relaxed font-light">
-          <MarkdownRenderer className="prose">{profile.servicesDescription || "Aucune nouveauté ou information de service disponible pour le moment."}</MarkdownRenderer>
+          <ReactMarkdown>{profile.servicesDescription || "Aucune nouveauté ou information de service disponible pour le moment."}</ReactMarkdown>
         </div>
       </div>
       
