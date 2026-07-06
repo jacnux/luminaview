@@ -22,6 +22,8 @@ const UserSchema = new mongoose.Schema({
   },
   portfolioIntro: { type: String, default: '' }, // NOUVEAU : Texte d'intro du portfolio
   servicesDescription: { type: String, default: '' },
+  tagline: { type: String, default: '' },
+  blogTheme: { type: String, default: 'classic' },
 
   bannerImage: {
     type: String

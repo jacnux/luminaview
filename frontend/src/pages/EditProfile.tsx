@@ -7,6 +7,8 @@ const EditProfile = () => {
   const [bio, setBio] = useState('');
   const [portfolioIntro, setPortfolioIntro] = useState('');
   const [servicesDescription, setServicesDescription] = useState('');
+  const [tagline, setTagline] = useState('');
+  const [blogTheme, setBlogTheme] = useState('classic');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [currentAvatar, setCurrentAvatar] = useState<string>('');
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -23,6 +25,8 @@ const EditProfile = () => {
       setBio(profileRes.data.bio || '');
       setPortfolioIntro(profileRes.data.portfolioIntro || '');
       setServicesDescription(profileRes.data.servicesDescription || '');
+      setTagline(profileRes.data.tagline || '');
+      setBlogTheme(profileRes.data.blogTheme || 'classic');
       setCurrentAvatar(profileRes.data.avatar || '');
       setCurrentBanner(profileRes.data.bannerImage || '');
     } catch (error) {
@@ -38,6 +42,8 @@ const EditProfile = () => {
       formData.append('bio', bio);
       formData.append('portfolioIntro', portfolioIntro);
       formData.append('servicesDescription', servicesDescription);
+      formData.append('tagline', tagline);
+      formData.append('blogTheme', blogTheme);
       if (avatarFile) formData.append('avatar', avatarFile);
       if (bannerFile) formData.append('banner', bannerFile);
 
@@ -131,6 +137,29 @@ const EditProfile = () => {
                   className={`${uploadInputClass} file:bg-purple-600 hover:file:bg-purple-700`}
                 />
               </div>
+            </div>
+
+            <div className={`border-t pt-6 ${sectionBorderClass}`}>
+              <label className={`block text-sm font-medium mb-1 ${mutedTextClass}`}>Phrase choc (Slogan)</label>
+              <input
+                type="text"
+                value={tagline}
+                onChange={e => setTagline(e.target.value)}
+                className={inputClass}
+                placeholder="Une phrase d'accroche pour marquer les esprits..."
+              />
+            </div>
+
+            <div className={`border-t pt-6 ${sectionBorderClass}`}>
+              <label className={`block text-sm font-medium mb-1 ${mutedTextClass}`}>Thème visuel du Blog</label>
+              <select
+                value={blogTheme}
+                onChange={e => setBlogTheme(e.target.value)}
+                className={`${inputClass} appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.25em_1.25em] bg-[right_0.75rem_center] bg-no-repeat`}
+              >
+                <option value="classic" className={theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}>Classique Hélioscope (Clair / Ambré)</option>
+                <option value="portfolio" className={theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}>Artfolio (Sombre / Doré)</option>
+              </select>
             </div>
 
             <div className={`border-t pt-6 ${sectionBorderClass}`}>

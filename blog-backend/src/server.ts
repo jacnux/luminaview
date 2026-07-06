@@ -42,6 +42,7 @@ const MainUser = mainConn.model('User', new mongoose.Schema({
   bio:     String,
   servicesDescription: String,
   tagline: String,
+  blogTheme: String,
   isAdmin: Boolean
 }, { collection: 'users' }));
 
@@ -140,6 +141,7 @@ app.get('/api/user/:slug', async (req: Request, res: Response) => {
       bio:                 user.bio,
       servicesDescription: user.servicesDescription,
       tagline:             user.tagline,
+      blogTheme:           user.blogTheme || 'classic',
       showcaseAlbums:      pages
     });
   } catch (error) {

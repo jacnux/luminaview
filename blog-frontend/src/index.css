@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700;800&family=Tangerine:wght@700&family=Roboto+Condensed:wght@300;400;700&display=swap');
+
 /* --- TAILWIND BASE --- */
 @tailwind base;
 @tailwind components;
@@ -275,5 +277,159 @@ body {
 /* Helpers */
 .text-center { text-align: center; }
 .text-left { text-align: left; }
-.mt-4 { margin-top: 2rem; }
-.mb-4 { margin-bottom: 2rem; }
+.mt-8 { margin-top: 4rem; }
+.pt-8 { padding-top: 4rem; }
+
+/* --- THEME PORTFOLIO (ARTFOLIO) --- */
+.theme-portfolio {
+  font-family: 'Montserrat', sans-serif !important;
+  --primary: #a5955c !important;
+  --bg-main: #0a0a0a !important;
+  --bg-card: #121212 !important;
+  --bg-navbar: rgba(10, 10, 10, 0.85) !important;
+  --text-main: #f3f4f6 !important;
+  --text-muted: #9ca3af !important;
+  --border-color: rgba(255, 255, 255, 0.08) !important;
+  --shadow-color: rgba(0, 0, 0, 0.7) !important;
+  
+  background-color: var(--bg-main) !important;
+  color: var(--text-main) !important;
+  min-height: 100vh;
+}
+
+.theme-portfolio h1,
+.theme-portfolio h2,
+.theme-portfolio h3,
+.theme-portfolio h4,
+.theme-portfolio h5,
+.theme-portfolio h6 {
+  font-family: 'Roboto Condensed', sans-serif !important;
+}
+
+.theme-portfolio .blog-logo {
+  font-family: 'Tangerine', cursive !important;
+  font-size: 2.2rem !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+/* Custom class for borders in portfolio theme */
+.theme-portfolio .border-black\/\[0\.06\],
+.theme-portfolio .dark\:border-white\/\[0\.06\],
+.theme-portfolio .border-black\/\[0\.08\],
+.theme-portfolio .dark\:border-white\/\[0\.08\] {
+  border-color: rgba(165, 149, 92, 0.15) !important;
+}
+
+/* --- SIDEBAR LAYOUT FOR PORTFOLIO THEME (MIN-WIDTH: 1192PX) --- */
+@media (min-width: 1192px) {
+  .theme-portfolio {
+    /* Garde le layout flex-column par défaut pour empiler verticalement main et footer */
+  }
+  
+  .theme-portfolio nav {
+    width: 280px !important;
+    height: 100vh !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 60px 40px !important;
+    border-right: 1px solid rgba(165, 149, 92, 0.15) !important;
+    border-bottom: none !important;
+    background-color: var(--bg-main) !important;
+    box-shadow: none !important;
+  }
+  
+  .theme-portfolio nav > div {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    height: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    gap: 40px !important;
+  }
+  
+  .theme-portfolio nav .blog-logo {
+    margin-bottom: 20px !important;
+  }
+  
+  .theme-portfolio nav .flex.items-center.gap-1 {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    width: 100% !important;
+    gap: 12px !important;
+  }
+  
+  .theme-portfolio nav .nav-link {
+    width: 100% !important;
+    padding: 6px 0 !important;
+    border-radius: 0 !important;
+    text-align: left !important;
+    text-transform: uppercase !important;
+    font-family: 'Roboto Condensed', sans-serif !important;
+    font-weight: 300 !important;
+    letter-spacing: 0.1em !important;
+  }
+  
+  .theme-portfolio nav .nav-link-active {
+    border-bottom: none !important;
+    border-left: 2px solid var(--primary) !important;
+    padding-left: 10px !important;
+    font-weight: 500 !important;
+    background: none !important;
+  }
+  
+  .theme-portfolio main {
+    margin-left: 280px !important;
+    width: calc(100% - 280px) !important;
+    min-height: 100vh !important;
+    padding-left: 40px !important;
+    padding-right: 40px !important;
+  }
+  
+  .theme-portfolio footer {
+    margin-left: 280px !important;
+    width: calc(100% - 280px) !important;
+    border-top: 1px solid rgba(165, 149, 92, 0.1) !important;
+  }
+}
+
+/* --- MOBILE LAYOUT ADJUSTMENTS FOR PORTFOLIO THEME --- */
+@media (max-width: 1191px) {
+  .theme-portfolio nav {
+    background-color: var(--bg-card) !important;
+    border-bottom: 1px solid rgba(165, 149, 92, 0.15) !important;
+  }
+  
+  .theme-portfolio nav .blog-logo {
+    font-size: 1.5rem !important;
+  }
+  
+  .theme-portfolio nav > div {
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+  }
+  
+  .theme-portfolio nav .flex.items-center.gap-1 {
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    width: 100% !important;
+    padding-top: 10px !important;
+    justify-content: flex-start !important;
+    scrollbar-width: none !important; /* Hide scrollbar on Firefox */
+  }
+  
+  .theme-portfolio nav .flex.items-center.gap-1::-webkit-scrollbar {
+    display: none !important; /* Hide scrollbar on Chrome/Safari */
+  }
+  
+  .theme-portfolio nav .nav-link {
+    font-family: 'Roboto Condensed', sans-serif !important;
+    text-transform: uppercase !important;
+    font-size: 0.85rem !important;
+  }
+}

@@ -466,7 +466,7 @@ const PortfolioMenu = ({
             rel="noopener noreferrer"
             className="lv-menu-btn-safe lv-menu-btn-safe-inactive"
           >
-            Blog
+            Actualités
           </a>
           <button
             onClick={() => handleParentTabClick('about')}
@@ -878,6 +878,15 @@ const PortfolioPage = () => {
     const fetchPortfolio = async () => {
       try {
         const res = await api.get(`/albums/portfolio/${username}`);
+        if (res.data.user && res.data.user.blogTheme === 'portfolio' && username) {
+          const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+          if (isLocal) {
+            window.location.href = `http://localhost:8090`;
+          } else {
+            window.location.href = `https://${username.toLowerCase()}.helioscope.fr`;
+          }
+          return;
+        }
         setUser(res.data.user);
         setAlbums(res.data.albums);
         api
