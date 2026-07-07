@@ -57,6 +57,36 @@ graph TD
 
 ---
 
+## 🔗 Liens de Partage & API Développeurs
+
+LuminaView est conçu pour être ouvert et intégrable très facilement. Il propose deux manières principales de diffuser des galeries en dehors de la plateforme.
+
+### 🔌 1. Intégration d'Albums (Embed Widget)
+Les développeurs et blogueurs externes peuvent intégrer n'importe quel album public à l'aide d'une balise `iframe` standard. Le widget s'adapte automatiquement à l'espace disponible et préserve l'interactivité (grille, lightbox responsive) :
+
+```html
+<iframe 
+  src="https://votre-domaine.fr/embed/album/ID_DE_L_ALBUM" 
+  allowfullscreen 
+  style="width: 100%; height: 600px; border: 0; border-radius: 12px; overflow: hidden;">
+</iframe>
+```
+*(Un fichier d'exemple et de test est disponible dans la racine du projet : [test-embed.html](file:///Users/jac/docker/luminaview/blog-luminaview/test-embed.html)).*
+
+### 📡 2. API REST Publique & Privée
+LuminaView expose des points d'accès (endpoints) HTTP clairs pour interagir avec vos données depuis d'autres applications :
+
+*   **Récupérer les albums et métadonnées d'un portfolio** :
+    `GET /api/albums/portfolio/:username`
+*   **Lister les photos d'un album spécifique** (avec métadonnées EXIF incluses) :
+    `GET /api/albums/photos/:albumId`
+*   **Obtenir les pages d'un utilisateur** (Séries, Expositions, etc.) :
+    `GET /api/user-pages/:username`
+*   **Détail d'une page personnalisée** :
+    `GET /api/user-pages/:username/:slug`
+
+---
+
 ## 🚀 Démarrage Rapide
 
 ### Prérequis
