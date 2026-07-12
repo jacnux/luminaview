@@ -10,6 +10,7 @@ import AboutPage   from './pages/blog/AboutPage';
 import GalleryPage from './pages/blog/GalleryPage';
 import ContactPage from './pages/blog/ContactPage';
 import NouveautesPage from './pages/blog/NouveautesPage';
+import CarnetPage from './pages/blog/CarnetPage';
 import { getBlogSlug } from './utils/getBlogSlug';
 import { API_PREFIX } from './utils/blogApi';
 
@@ -45,6 +46,7 @@ const AppContent: React.FC = () => {
           <Route path="/about"     element={<AboutPage />}   />
           <Route path="/nouveautes" element={<NouveautesPage />} />
           <Route path="/gallery"   element={<GalleryPage />} />
+          <Route path="/carnet"    element={<CarnetPage />}  />
           <Route path="/contact"   element={<ContactPage />} />
         </Routes>
       </main>
