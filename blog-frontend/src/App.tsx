@@ -18,16 +18,20 @@ const AppContent: React.FC = () => {
   const location = useLocation();
   const blogSlug = getBlogSlug(location.search);
   const [themeClass, setThemeClass] = useState('theme-classic');
+  const [enableChambreNoire, setEnableChambreNoire] = useState(true);
 
   useEffect(() => {
     if (!blogSlug) return;
     fetch(`${API_PREFIX}/user/${blogSlug}`)
       .then(res => res.json())
       .then(data => {
-        if (data && data.blogTheme === 'portfolio') {
-          setThemeClass('theme-portfolio');
-        } else {
-          setThemeClass('theme-classic');
+        if (data) {
+          if (data.blogTheme === 'portfolio') {
+            setThemeClass('theme-portfolio');
+          } else {
+            setThemeClass('theme-classic');
+          }
+          setEnableChambreNoire(data.enableChambreNoire !== false);
         }
       })
       .catch(err => {
@@ -38,7 +42,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className={themeClass} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Navbar themeClass={themeClass} />
+      <Navbar themeClass={themeClass} enableChambreNoire={enableChambreNoire} />
       <main style={{ flex: 1, width: '100%' }}>
         <Routes>
           <Route path="/"          element={<PostList />}    />
