@@ -9,6 +9,7 @@ const EditProfile = () => {
   const [servicesDescription, setServicesDescription] = useState('');
   const [tagline, setTagline] = useState('');
   const [blogTheme, setBlogTheme] = useState('classic');
+  const [enableChambreNoire, setEnableChambreNoire] = useState(true);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [currentAvatar, setCurrentAvatar] = useState<string>('');
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -27,6 +28,7 @@ const EditProfile = () => {
       setServicesDescription(profileRes.data.servicesDescription || '');
       setTagline(profileRes.data.tagline || '');
       setBlogTheme(profileRes.data.blogTheme || 'classic');
+      setEnableChambreNoire(profileRes.data.enableChambreNoire !== false);
       setCurrentAvatar(profileRes.data.avatar || '');
       setCurrentBanner(profileRes.data.bannerImage || '');
     } catch (error) {
@@ -44,6 +46,7 @@ const EditProfile = () => {
       formData.append('servicesDescription', servicesDescription);
       formData.append('tagline', tagline);
       formData.append('blogTheme', blogTheme);
+      formData.append('enableChambreNoire', String(enableChambreNoire));
       if (avatarFile) formData.append('avatar', avatarFile);
       if (bannerFile) formData.append('banner', bannerFile);
 
@@ -203,6 +206,28 @@ const EditProfile = () => {
                         {blogTheme === 'portfolio' && <span className="w-2.5 h-2.5 bg-yellow-500 rounded-full"></span>}
                       </div>
                       <p className="text-xs text-gray-500 leading-relaxed">Design sombre et doré, avec menu latéral fixe. Idéal pour une présentation artistique immersive et contrastée.</p>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold tracking-wide uppercase">Intégration Chambre Noire</h4>
+                      <p className="text-xs text-gray-500 mt-1">Afficher le lien vers le carnet de route dans le menu du blog.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEnableChambreNoire(!enableChambreNoire)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${
+                        enableChambreNoire ? 'bg-yellow-500' : 'bg-gray-700'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                          enableChambreNoire ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
                     </button>
                   </div>
                 </div>

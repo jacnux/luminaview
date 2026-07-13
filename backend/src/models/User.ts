@@ -24,6 +24,7 @@ const UserSchema = new mongoose.Schema({
   servicesDescription: { type: String, default: '' },
   tagline: { type: String, default: '' },
   blogTheme: { type: String, default: 'classic' },
+  enableChambreNoire: { type: Boolean, default: true },
 
   bannerImage: {
     type: String

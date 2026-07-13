@@ -12,9 +12,23 @@ const PostDetail: React.FC = () => {
   useEffect(() => {
     if (!slug) return;
     fetch(`${API_PREFIX}/posts/${slug}`)
-      .then(res => res.json())
-      .then(data => { setPost(data); setLoading(false); })
-      .catch(err => { console.error(err); setLoading(false); });
+      .then(res => {
+        if (!res.ok) throw new Error('Erreur de chargement de l\'article');
+        return res.json();
+      })
+      .then(data => {
+        if (data && !data.error) {
+          setPost(data);
+        } else {
+          setPost(null);
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setPost(null);
+        setLoading(false);
+      });
   }, [slug]);
 
   if (loading) {

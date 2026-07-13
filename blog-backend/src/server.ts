@@ -66,6 +66,7 @@ const Post = mongoose.model('Post', new mongoose.Schema({
   content:   String,
   slug:      String,
   blogSlug:  String,
+  isPublished: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 }));
 
@@ -159,7 +160,23 @@ app.get('/api/user/:slug', async (req: Request, res: Response) => {
 app.get('/api/posts', async (req: Request, res: Response) => {
   try {
     const { blog } = req.query;
-    const posts = await Post.find(blog ? { blogSlug: blog } : {}).sort({ createdAt: -1 });
+    
+    // Vérification de l'authentification pour afficher les brouillons
+    let token = req.headers['authorization']?.split(' ')[1];
+    let isAdminOrOwner = false;
+    if (token) {
+      try {
+        jwt.verify(token, process.env.JWT_SECRET || 'default_secret');
+        isAdminOrOwner = true;
+      } catch (e) {}
+    }
+
+    let query: any = blog ? { blogSlug: blog } : {};
+    if (!isAdminOrOwner) {
+      query.isPublished = { $ne: false }; // Pour inclure aussi les anciens posts sans le champ isPublished
+    }
+
+    const posts = await Post.find(query).sort({ createdAt: -1 });
     res.json(posts);
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur' });
@@ -171,6 +188,22 @@ app.get('/api/posts/:slug', async (req: Request, res: Response) => {
   try {
     const post = await Post.findOne({ slug: req.params.slug });
     if (!post) return res.status(404).json({ error: 'Article non trouvé' });
+    
+    // Si brouillon et non connecté, cacher l'article
+    if (post.isPublished === false) {
+      let token = req.headers['authorization']?.split(' ')[1];
+      let isAdminOrOwner = false;
+      if (token) {
+        try {
+          jwt.verify(token, process.env.JWT_SECRET || 'default_secret');
+          isAdminOrOwner = true;
+        } catch (e) {}
+      }
+      if (!isAdminOrOwner) {
+        return res.status(404).json({ error: 'Article non trouvé' });
+      }
+    }
+    
     res.json(post);
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur' });
@@ -180,16 +213,25 @@ app.get('/api/posts/:slug', async (req: Request, res: Response) => {
 // POST /api/posts — Créer un article + notifier les abonnés
 app.post('/api/posts', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { title, content, slug, blogSlug } = req.body;
+    const { title, content, slug, blogSlug, isPublished } = req.body;
     if (!blogSlug) return res.status(400).json({ error: 'blogSlug manquant' });
 
-    const newPost = await new Post({ title, content, slug, blogSlug }).save();
-    console.log(`[POSTS] Article créé : ${title}`);
+    const newPost = await new Post({ 
+      title, 
+      content, 
+      slug, 
+      blogSlug, 
+      isPublished: isPublished === true 
+    }).save();
+    console.log(`[POSTS] Article créé : ${title} (Publié: ${newPost.isPublished})`);
 
-    const subscribers = await NewsletterSubscriber.find({ blogSlug });
-    if (subscribers.length > 0) {
-      console.log(`[NEWSLETTER] Envoi à ${subscribers.length} abonné(s)...`);
-      await sendNewPostNotification(subscribers, newPost);
+    // Notifier uniquement si l'article est publié
+    if (newPost.isPublished) {
+      const subscribers = await NewsletterSubscriber.find({ blogSlug });
+      if (subscribers.length > 0) {
+        console.log(`[NEWSLETTER] Envoi à ${subscribers.length} abonné(s)...`);
+        await sendNewPostNotification(subscribers, newPost);
+      }
     }
 
     res.status(201).json(newPost);
@@ -202,13 +244,28 @@ app.post('/api/posts', authMiddleware, async (req: Request, res: Response) => {
 // PUT /api/posts/:id — Modifier un article
 app.put('/api/posts/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { title, content, slug, blogSlug } = req.body;
+    const { title, content, slug, blogSlug, isPublished } = req.body;
+    
+    // Récupérer l'état actuel avant modification
+    const existingPost = await Post.findById(req.params.id);
+    if (!existingPost) return res.status(404).json({ error: 'Article non trouvé' });
+
     const updated = await Post.findByIdAndUpdate(
       req.params.id,
-      { title, content, slug, blogSlug },
+      { title, content, slug, blogSlug, isPublished: isPublished === true },
       { new: true }
     );
     if (!updated) return res.status(404).json({ error: 'Article non trouvé' });
+
+    // Notifier si l'article vient d'être publié (transition brouillon -> publié)
+    if (updated.isPublished && existingPost.isPublished !== true) {
+      const subscribers = await NewsletterSubscriber.find({ blogSlug });
+      if (subscribers.length > 0) {
+        console.log(`[NEWSLETTER] Envoi à ${subscribers.length} abonné(s) suite à publication...`);
+        await sendNewPostNotification(subscribers, updated);
+      }
+    }
+
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: 'Erreur mise à jour' });

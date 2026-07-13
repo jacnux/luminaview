@@ -54,19 +54,42 @@ const BlogManager = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, shouldPublish: boolean) => {
     e.preventDefault();
     if (!title || !content) return alert("Remplissez tous les champs");
 
     try {
-      const postSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now();
+      const postSlug = editId
+        ? posts.find(p => p._id === editId)?.slug || (title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now())
+        : (title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now());
+
+      let targetIsPublished = shouldPublish;
+      if (editId) {
+        const existingPost = posts.find(p => p._id === editId);
+        // Si déjà publié, on reste publié
+        if (existingPost?.isPublished && !shouldPublish) {
+          targetIsPublished = true;
+        }
+      }
 
       if (editId) {
-        await api.put(`/blog/posts/${editId}`, { title, content, slug: postSlug, blogSlug });
-        alert("Article mis à jour !");
+        await api.put(`/blog/posts/${editId}`, { 
+          title, 
+          content, 
+          slug: postSlug, 
+          blogSlug,
+          isPublished: targetIsPublished 
+        });
+        alert(targetIsPublished ? "Article mis à jour et publié !" : "Brouillon mis à jour !");
       } else {
-        await api.post('/blog/posts', { title, content, slug: postSlug, blogSlug });
-        alert("Article publié !");
+        await api.post('/blog/posts', { 
+          title, 
+          content, 
+          slug: postSlug, 
+          blogSlug,
+          isPublished: targetIsPublished 
+        });
+        alert(targetIsPublished ? "Article publié !" : "Article enregistré en brouillon !");
       }
 
       setTitle('');
@@ -200,7 +223,7 @@ const BlogManager = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
               <input
                 type="text"
                 value={title}
@@ -219,11 +242,25 @@ const BlogManager = () => {
 
               <div className="flex gap-4 pt-4 border-t border-white/5">
                 <button
-                  type="submit"
-                  className="flex-1 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-black font-bold py-3.5 rounded-xl transition duration-200 shadow-lg shadow-yellow-500/10 active:scale-[0.99]"
+                  type="button"
+                  onClick={(e) => handleSubmit(e, false)}
+                  className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3.5 rounded-xl transition duration-200 active:scale-[0.99]"
                 >
-                  {editId ? "Mettre à jour l'article" : "Publier l'article"}
+                  {editId && posts.find(p => p._id === editId)?.isPublished 
+                    ? "Enregistrer les modifications" 
+                    : "Enregistrer en brouillon"}
                 </button>
+                
+                {(!editId || !posts.find(p => p._id === editId)?.isPublished) && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleSubmit(e, true)}
+                    className="flex-1 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-black font-bold py-3.5 rounded-xl transition duration-200 shadow-lg shadow-yellow-500/10 active:scale-[0.99]"
+                  >
+                    Publier l'article
+                  </button>
+                )}
+                
                 {editId && (
                   <button
                     type="button"
@@ -279,7 +316,14 @@ const BlogManager = () => {
                       className="bg-white/[0.02] p-4 rounded-xl border border-white/5 hover:border-yellow-500/20 hover:bg-white/[0.04] transition duration-200 group flex justify-between items-center gap-4"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-200 truncate text-sm leading-snug">{post.title}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-gray-200 truncate text-sm leading-snug">{post.title}</p>
+                          {post.isPublished === false && (
+                            <span className="px-2 py-0.5 text-[9px] font-bold bg-yellow-500/20 text-yellow-400 rounded-full border border-yellow-500/30">
+                              Brouillon
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[10px] text-gray-500 mt-1">{new Date(post.createdAt).toLocaleDateString()}</p>
                       </div>
                       <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
