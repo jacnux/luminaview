@@ -43,6 +43,7 @@ const MainUser = mainConn.model('User', new mongoose.Schema({
   servicesDescription: String,
   tagline: String,
   blogTheme: String,
+  enableChambreNoire: Boolean,
   isAdmin: Boolean
 }, { collection: 'users' }));
 
@@ -143,6 +144,7 @@ app.get('/api/user/:slug', async (req: Request, res: Response) => {
       servicesDescription: user.servicesDescription,
       tagline:             user.tagline,
       blogTheme:           user.blogTheme || 'classic',
+      enableChambreNoire:  (user as any).enableChambreNoire !== false,
       showcaseAlbums:      pages
     });
   } catch (error) {

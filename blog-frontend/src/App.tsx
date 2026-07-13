@@ -10,6 +10,7 @@ import AboutPage   from './pages/blog/AboutPage';
 import GalleryPage from './pages/blog/GalleryPage';
 import ContactPage from './pages/blog/ContactPage';
 import NouveautesPage from './pages/blog/NouveautesPage';
+import CarnetPage from './pages/blog/CarnetPage';
 import { getBlogSlug } from './utils/getBlogSlug';
 import { API_PREFIX } from './utils/blogApi';
 
@@ -17,16 +18,20 @@ const AppContent: React.FC = () => {
   const location = useLocation();
   const blogSlug = getBlogSlug(location.search);
   const [themeClass, setThemeClass] = useState('theme-classic');
+  const [enableChambreNoire, setEnableChambreNoire] = useState(true);
 
   useEffect(() => {
     if (!blogSlug) return;
     fetch(`${API_PREFIX}/user/${blogSlug}`)
       .then(res => res.json())
       .then(data => {
-        if (data && data.blogTheme === 'portfolio') {
-          setThemeClass('theme-portfolio');
-        } else {
-          setThemeClass('theme-classic');
+        if (data) {
+          if (data.blogTheme === 'portfolio') {
+            setThemeClass('theme-portfolio');
+          } else {
+            setThemeClass('theme-classic');
+          }
+          setEnableChambreNoire(data.enableChambreNoire !== false);
         }
       })
       .catch(err => {
@@ -37,7 +42,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className={themeClass} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Navbar themeClass={themeClass} />
+      <Navbar themeClass={themeClass} enableChambreNoire={enableChambreNoire} />
       <main style={{ flex: 1, width: '100%' }}>
         <Routes>
           <Route path="/"          element={<PostList />}    />
@@ -45,6 +50,7 @@ const AppContent: React.FC = () => {
           <Route path="/about"     element={<AboutPage />}   />
           <Route path="/nouveautes" element={<NouveautesPage />} />
           <Route path="/gallery"   element={<GalleryPage />} />
+          <Route path="/carnet"    element={<CarnetPage />}  />
           <Route path="/contact"   element={<ContactPage />} />
         </Routes>
       </main>
