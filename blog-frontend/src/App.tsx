@@ -18,7 +18,7 @@ const AppContent: React.FC = () => {
   const location = useLocation();
   const blogSlug = getBlogSlug(location.search);
   const [themeClass, setThemeClass] = useState('theme-classic');
-  const [enableChambreNoire, setEnableChambreNoire] = useState(true);
+  const [chambreNoireUrl, setChambreNoireUrl] = useState('');
 
   useEffect(() => {
     if (!blogSlug) return;
@@ -31,7 +31,7 @@ const AppContent: React.FC = () => {
           } else {
             setThemeClass('theme-classic');
           }
-          setEnableChambreNoire(data.enableChambreNoire !== false);
+          setChambreNoireUrl(data.chambreNoireUrl || '');
         }
       })
       .catch(err => {
@@ -42,7 +42,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className={themeClass} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Navbar themeClass={themeClass} enableChambreNoire={enableChambreNoire} />
+      <Navbar themeClass={themeClass} chambreNoireUrl={chambreNoireUrl} />
       <main style={{ flex: 1, width: '100%' }}>
         <Routes>
           <Route path="/"          element={<PostList />}    />

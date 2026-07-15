@@ -275,6 +275,29 @@ const ShareModal = ({
       <p className="text-gray-300 text-sm mb-6 text-center">{album.title}</p>
 
       <div className="space-y-4">
+        {/* Token de partage LuminaIA */}
+        <div className="bg-white/5 dark:bg-gray-900 p-4 rounded-lg border border-white/10">
+          <label className="block text-sm font-bold text-white mb-2">
+            Token LuminaIA
+          </label>
+          <div className="flex gap-2">
+            <input
+              readOnly
+              value={album._id}
+              className="flex-1 bg-black/20 text-white text-xs p-2 rounded border border-white/10 font-mono"
+            />
+            <button
+              onClick={() => {
+                copyToClipboard(album._id, 'Token LuminaIA');
+                onClose();
+              }}
+              className="bg-yellow-600 hover:bg-yellow-500 text-white px-3 py-2 rounded text-xs font-bold transition"
+            >
+              Copier
+            </button>
+          </div>
+        </div>
+
         <div className="bg-white/5 dark:bg-gray-900 p-4 rounded-lg border border-white/10">
           <label className="block text-sm font-bold text-white mb-2">
             Pour WordPress

@@ -9,7 +9,7 @@ const EditProfile = () => {
   const [servicesDescription, setServicesDescription] = useState('');
   const [tagline, setTagline] = useState('');
   const [blogTheme, setBlogTheme] = useState('classic');
-  const [enableChambreNoire, setEnableChambreNoire] = useState(true);
+  const [chambreNoireUrl, setChambreNoireUrl] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [currentAvatar, setCurrentAvatar] = useState<string>('');
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -28,7 +28,7 @@ const EditProfile = () => {
       setServicesDescription(profileRes.data.servicesDescription || '');
       setTagline(profileRes.data.tagline || '');
       setBlogTheme(profileRes.data.blogTheme || 'classic');
-      setEnableChambreNoire(profileRes.data.enableChambreNoire !== false);
+      setChambreNoireUrl(profileRes.data.chambreNoireUrl || '');
       setCurrentAvatar(profileRes.data.avatar || '');
       setCurrentBanner(profileRes.data.bannerImage || '');
     } catch (error) {
@@ -46,7 +46,7 @@ const EditProfile = () => {
       formData.append('servicesDescription', servicesDescription);
       formData.append('tagline', tagline);
       formData.append('blogTheme', blogTheme);
-      formData.append('enableChambreNoire', String(enableChambreNoire));
+      formData.append('chambreNoireUrl', chambreNoireUrl);
       if (avatarFile) formData.append('avatar', avatarFile);
       if (bannerFile) formData.append('banner', bannerFile);
 
@@ -211,24 +211,16 @@ const EditProfile = () => {
                 </div>
 
                 <div className="pt-6 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-sm font-bold tracking-wide uppercase">Intégration Chambre Noire</h4>
-                      <p className="text-xs text-gray-500 mt-1">Afficher le lien vers le carnet de route dans le menu du blog.</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setEnableChambreNoire(!enableChambreNoire)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${
-                        enableChambreNoire ? 'bg-yellow-500' : 'bg-gray-700'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
-                          enableChambreNoire ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
+                  <div>
+                    <label className={labelClass}>Lien Chambre Noire</label>
+                    <p className="text-xs text-gray-500 mb-2">Saisissez l'URL de votre Chambre Noire (carnet de route) pour l'intégrer au menu du blog.</p>
+                    <input
+                      type="url"
+                      placeholder="https://chambrenoire.fr/mon-carnet"
+                      value={chambreNoireUrl}
+                      onChange={(e) => setChambreNoireUrl(e.target.value)}
+                      className={inputClass}
+                    />
                   </div>
                 </div>
               </div>

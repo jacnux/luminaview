@@ -112,7 +112,6 @@ const EmbedModal = ({ albumId, isPublic, onClose }: { albumId: string; isPublic:
   const apiPhotosUrl = `${window.location.origin}/api/albums/photos/${albumId}`;
 
   const [copiedIframe, setCopiedIframe] = useState(false);
-  const [copiedUrl, setCopiedUrl] = useState(false);
   const [copiedApiAlbum, setCopiedApiAlbum] = useState(false);
   const [copiedApiPhotos, setCopiedApiPhotos] = useState(false);
 
@@ -155,22 +154,6 @@ const EmbedModal = ({ albumId, isPublic, onClose }: { albumId: string; isPublic:
                 className="absolute right-2 top-2 bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1 rounded-lg transition"
               >
                 {copiedIframe ? 'Copié !' : 'Copier'}
-              </button>
-            </div>
-          </div>
-
-          {/* Lien Direct Option */}
-          <div>
-            <h4 className="text-sm font-semibold text-yellow-500 mb-2">Lien direct de partage</h4>
-            <div className="relative">
-              <pre className="bg-black/50 p-3 rounded-lg text-xs font-mono overflow-x-auto border border-white/10 pr-20 select-all break-all">
-                {embedUrl}
-              </pre>
-              <button
-                onClick={() => copyToClipboard(embedUrl, setCopiedUrl)}
-                className="absolute right-2 top-2 bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1 rounded-lg transition"
-              >
-                {copiedUrl ? 'Copié !' : 'Copier'}
               </button>
             </div>
           </div>
@@ -355,10 +338,13 @@ const AlbumView = () => {
   };
 
   const handleShare = (photo: any) => {
-    const shareUrl = `${window.location.origin}/uploads/${photo.filename}`;
-    if (navigator.share) {
-      navigator.share({ title: photo.title, url: shareUrl }).catch(console.error);
-    } else if (navigator.clipboard) {
+    const origin = window.location.origin;
+    const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
+    const shareUrl = isLocalhost 
+      ? `${origin}/uploads/${photo.filename}` 
+      : `http://localhost/${origin}/uploads/${photo.filename}`;
+    
+    if (navigator.clipboard) {
       navigator.clipboard.writeText(shareUrl).then(() => alert('Lien copié !'));
     } else {
       alert('Lien: ' + shareUrl);

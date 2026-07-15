@@ -6,10 +6,10 @@ import DarkModeToggle from './DarkModeToggle';
 
 interface NavbarProps {
   themeClass?: string;
-  enableChambreNoire?: boolean;
+  chambreNoireUrl?: string;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ themeClass, enableChambreNoire = true }) => {
+const Navbar: React.FC<NavbarProps> = ({ themeClass, chambreNoireUrl = '' }) => {
   const location = useLocation();
   const blogName = getBlogSlug(location.search);
   const s = location.search; // raccourci pour les query strings
@@ -49,8 +49,8 @@ const Navbar: React.FC<NavbarProps> = ({ themeClass, enableChambreNoire = true }
           <Link to={`/${s}`} className={getLinkClass('/')}>Articles</Link>
           <Link to={`/nouveautes${s}`} className={getLinkClass('/nouveautes')}>Nouveautés</Link>
           <Link to={`/gallery${s}`} className={getLinkClass('/gallery')}>Galeries</Link>
-          {enableChambreNoire && (
-            <Link to={`/carnet${s}`} className={getLinkClass('/carnet')}>Carnet de route</Link>
+          {chambreNoireUrl && (
+            <a href={chambreNoireUrl} target="_blank" rel="noopener noreferrer" className={getLinkClass('/carnet')}>Carnet de route</a>
           )}
           <a href={getPortfolioUrl()} target="_blank" rel="noopener noreferrer" className="nav-link px-3.5 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition duration-200">Portfolio</a>
           <Link to={`/contact${s}`} className={getLinkClass('/contact')}>Contact</Link>
